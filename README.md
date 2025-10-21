@@ -99,7 +99,7 @@ python3 analyzer.py youtube --channel_id <UC_CHANNEL_ID> [OPTIONS]
     *   **Audience Insight:** The results, including the category, a summary, and the like count, are saved to a CSV file. This allows you to easily sort and find popular comments within each category (e.g., find the most-liked `Suggestion`).
     *   **Frequent Question Summary:** After analyzing all comments, the tool automatically aggregates all comments classified as `Question` and generates a final summary of the most frequently asked questions, which is printed to the console.
 
-### 3. Niche Discovery & Analysis (Future Feature)
+### 3. Niche Discovery & Analysis (Next Up)
 
 This module helps you find and evaluate "blue ocean" niches by analyzing YouTube search results for a given keyword.
 
@@ -109,10 +109,16 @@ When run, the tool will perform two key analyses on the top search results:
 
 *   **:ocean: Content Freshness Analysis:**
     *   **What it does:** Checks the publication dates of the top-ranking videos.
-    *   **Why it matters:** If the search results are dominated by old videos (e.g., over a year old), it signals that the YouTube algorithm is craving fresh content for this topic. This presents a golden opportunity for new videos to rank quickly.
+    *   **Why it matters:** If the search results are dominated by old videos, it signals a golden opportunity for new content to rank quickly.
 
 *   **:beginner: Channel Authority Analysis:**
     *   **What it does:** Checks the subscriber counts of the channels behind the top-ranking videos.
-    *   **Why it matters:** If the results page features many small-to-medium-sized channels (e.g., < 100k subscribers), it proves that the niche is not dominated by massive creators. This indicates a friendly environment for new channels to compete and succeed.
+    *   **Why it matters:** If the results page features many small channels, it proves that the niche is friendly for new creators to compete.
 
-*   **:rocket: SEO Recommendations Engine (Planned):** An advanced module that provides actionable SEO advice for your own channel based on the analysis of a target channel. It will go beyond analysis to provide concrete suggestions for titles, tags, and overall SEO strategy.
+### 4. Future Features (Planned)
+
+*   **:rocket: SEO Recommendations Engine:** An advanced module that provides actionable SEO advice for your own channel based on the analysis of a target channel.
+
+*   **:art: Thumbnail Style Analysis:** A multi-modal analysis feature to understand the visual strategy of thumbnails.
+    *   **Style Summary:** For a given channel, analyze the composition, use of text, color schemes, and emotional expression in its thumbnails.
+    *   **Style Evolution:** When running trend analysis, compare old and new thumbnails to report on how a channel's visual branding has evolved over time.

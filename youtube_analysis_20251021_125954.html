@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>YouTube Comment Analysis Report</title>
+        <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 40px; background-color: #f8f9fa; color: #212529; }
+        h1 { color: #343a40; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        thead th { background-color: #e9ecef; cursor: pointer; }
+        tbody tr:nth-child(even) { background-color: #f2f2f2; }
+        tbody tr:hover { background-color: #dee2e6; }
+        .controls { margin-bottom: 20px; display: flex; gap: 15px; align-items: center; }
+        .controls input, .controls select { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px; }
+        .category { padding: 4px 8px; border-radius: 4px; color: white; font-weight: bold; }
+        .Positive-Feedback { background-color: #28a745; }
+        .Negative-Sentiment { background-color: #dc3545; }
+        .Question { background-color: #007bff; }
+        .Suggestion { background-color: #ffc107; color: #212529; }
+        .Other { background-color: #6c757d; }
+    </style>
+    </head>
+    <body>
+        <h1>YouTube Comment Analysis Report</h1><div class="controls"><input type="text" id="keywordFilter" onkeyup="filterTable()" placeholder="Filter by keyword..."><select id="categoryFilter" onchange="filterTable()"><option value="">All Categories</option><option value="Positive Feedback">Positive Feedback</option><option value="Negative Sentiment">Negative Sentiment</option><option value="Question">Question</option><option value="Suggestion">Suggestion</option><option value="Other">Other</option></select></div><table id="resultsTable"><thead><tr><th onclick="sortTable(0)">Category</th><th onclick="sortTable(1)">Like Count</th><th onclick="sortTable(2)">Summary (Translated)</th><th>Original Comment</th><th>Video Title</th></tr></thead><tbody><tr><td><span class="category Other">Other</span></td><td>24183</td><td>这车的造型，就好像是七十年代的人想象中2025年该有的样子。</td><td>It looks like how people in the 70's imagined 2025 cars would look like</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>9952</td><td>当你说那不是真的时候，我心都提到嗓子眼了，生怕那辆车会突然消失，还以为是什么AI特效呢。</td><td>i was so scared that the car was gonna disapear when you said it was not real... thought it would be ai or something</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>2636</td><td>在我看來，用「每後車廂英里數」當作測量單位，一點毛病都沒有。</td><td>"Miles per trunk" is a valid unit of measurement as far as I'm concerned.</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>467</td><td>我不光是想买，我已经是预购车主了！就等他们开始生产。这绝对是我见过最酷的交通工具，没有之一。每天开不到40英里的话，对地球几乎零影响，简直太赞了。</td><td>Not only would I buy one, I am buying one! That is, once they start production (I'm an Aptera Accelerator).  This is the coolest transportation idea I've ever seen - by far. Almost no impact to the planet if you don't drive more than 40 miles a day. Too cool.</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>9051</td><td>让这位一脸「被绑架」表情的人来介绍也太好笑了😂</td><td>Not the kidnapped guy to show the space 😂😂</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>893</td><td>看到1分0秒时，感觉自己就像被绑架的人质，但绑匪的观点却出奇地正确，让人无法反驳。</td><td>1:00 When you're being kidnapped but your kidnapper is making some pretty valid points.</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>1976</td><td>我真心欣賞這個設計，特別是它甚至不被歸類為汽車這點。這反而讓我更容易從心理上接受它那份與眾不同的風格。</td><td>I genuinely like the design. Especially the fact that it doesn't even classify as a car. It makes my brain accept the eccentricity more.</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>511</td><td>终于看到有人将空气动力学用在提升效率上，而不仅是追求极速，这点真的让人很欣慰。</td><td>I'm really glad to see someone finally use aerodynamics for efficiency, and not just top speed</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>847</td><td>问题根本不在于有没有人感兴趣，毕竟预购量都超过四万了。真正的症结完全是资金问题。我作为一名早鸟预购者和支持者，真心希望能一切顺利。</td><td>The problem isn’t interest. They have like 40,000+ pre-orders.
+
+The problem is entirely money. Crossing my fingers. I’m an early pre-order, and accelerator.</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>332</td><td>作为一名澳大利亚人，我太希望能开着它日常代步了。</td><td>As an Australian, I would love this for a daily driver.</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Suggestion">Suggestion</span></td><td>1916</td><td>强烈建议以后每次评测都让Miles待在后备箱里。要是每个视频一打开后备箱，就看到他悠闲地躺在里面，那画面肯定特别搞笑。</td><td>Petition to have Miles in every car's trunk during the review. Would be hilarious if in every video when the trunk opens its just Miles chilling</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>34</td><td>我已经下订了，随时准备好迎接我的 Aptera！我还特地买了个小车模，并且非常期待能亲眼看到帐篷和宠物配件。它支持‘维修权’这一点也让我大加赞赏。</td><td>I have a reservation! I'm ready for my Aptera! I bought a small scale figure! I'm excited to see the tent and pet add-ons in petson. Love the right to repair aspect too.</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>84</td><td>三年前就下订了，当初就是被它的愿景和技术深深吸引。真心期盼他们能坚持到底，顺利抵达终点。</td><td>Reserved one three years ago, I just loved the vision and the tech. Hoping they cross the finish line.</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Suggestion">Suggestion</span></td><td>8</td><td>身為一名工程師，我認為這輛車的空氣動力學設計堪稱藝術品。不過，在車輛的進出功能方面似乎需要再多加考量。如果連這些控制功能都能為了追求極致的空氣動力學而做出更精巧、甚至看似「過度設計」的考量，那我絕對會毫不猶豫地買單。</td><td>As an engineer myself, this is beautiful aerodynamics wise but the access features need an overview. I would 100% buy a car like this if the access controls were over engineered for aerodynamics</td><td>The Solar Powered Aptera EV 👀</td></tr><tr><td><span class="category Positive-Feedback">Positive Feedback</span></td><td>16</td><td>这位车主非常激动，他已经预订了两台Aptera，分别是400英里和未来600英里的版本，并认为这个续航里程已经完全满足他的需求。他认为对于退休后的生活来说，这辆车无论是处理日常琐事还是其他用途，都是一个完美的选择。他还希望Aptera能取代他所在城镇里常见的高尔夫球车，因为Aptera作为一款全天候、更安全的交通工具，更适合在真正的道路上行驶。</td><td>YES, two reservation. One for the LAUNCH  Edition ( 400 mi range ) and one for the future 600 mi range. No need for the 1000 mi range.perfect vehicle for most errands. Being retired, perfect for everything ! We have so many electric golf cats in this town… I’d love to see Aptera replace them, placing this all weather, safer vehicle in the road and not in the confusing golf car lanes…</td><td>The Solar Powered Aptera EV 👀</td></tr></tbody></table>
+        <script>
+        function filterTable() {
+            const keyword = document.getElementById('keywordFilter').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            const table = document.getElementById('resultsTable');
+            const rows = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < rows.length; i++) { // Start from 1 to skip header
+                const categoryCell = rows[i].getElementsByTagName('td')[0];
+                const summaryCell = rows[i].getElementsByTagName('td')[2];
+                const commentCell = rows[i].getElementsByTagName('td')[3];
+                
+                const categoryMatch = (category === '' || categoryCell.textContent.includes(category));
+                const keywordMatch = (summaryCell.textContent.toLowerCase().includes(keyword) || commentCell.textContent.toLowerCase().includes(keyword));
+
+                if (categoryMatch && keywordMatch) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById('resultsTable');
+            let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            switching = true;
+            dir = "asc"; 
+
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[columnIndex];
+                    y = rows[i + 1].getElementsByTagName("TD")[columnIndex];
+
+                    let xContent = x.innerHTML;
+                    let yContent = y.innerHTML;
+
+                    if (columnIndex === 1) { // Like Count column
+                        xContent = parseInt(xContent) || 0;
+                        yContent = parseInt(yContent) || 0;
+                    } else {
+                        xContent = xContent.toLowerCase();
+                        yContent = yContent.toLowerCase();
+                    }
+
+                    if (dir == "asc") {
+                        if (xContent > yContent) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (xContent < yContent) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+    </script>
+    </body>
+    </html>

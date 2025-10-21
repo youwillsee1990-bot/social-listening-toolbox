@@ -33,7 +33,7 @@ def get_reddit_posts(config, subreddits, limit, time_filter):
     print(f"--- [Reddit] Fetched a total of {len(all_posts)} posts. ---")
     return all_posts
 
-def run_reddit_analysis(config, subreddits, limit, time_filter, output_file):
+def run_reddit_analysis(config, subreddits, limit, time_filter, output_file_base):
     """Main function to run the Reddit analysis."""
     posts = get_reddit_posts(config, subreddits, limit, time_filter)
 
@@ -41,6 +41,7 @@ def run_reddit_analysis(config, subreddits, limit, time_filter, output_file):
         print("--- No posts found. Exiting Reddit analysis. ---")
         return
 
+    output_file = output_file_base + ".csv"
     print(f"--- Creating output file: {output_file} ---")
     with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['subreddit', 'title', 'url', 'score', 'is_problem_post', 'problem_summary', 'tags']
