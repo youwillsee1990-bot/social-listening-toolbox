@@ -162,7 +162,7 @@ def analyze_video_comments(youtube_service, gemini_api_key, videos_to_analyze, c
     write_html_report(analysis_results, output_file_base)
     return all_questions
 
-def run_youtube_analysis(config, channel_url=None, channel_id=None, video_limit=10, sort_by='popular', analyze_trends=False, comment_limit=15, output_file_base="youtube_analysis"):
+def run_youtube_analysis(config, channel_url=None, channel_id=None, video_limit=10, sort_by='popular', analyze_trends=False, comment_limit=15, skip_comments=False, output_file_base="youtube_analysis"):
     print(f"--- Initializing YouTube Analysis Module ---")
     youtube_service = get_youtube_service(config)
     if not youtube_service:
@@ -193,8 +193,12 @@ def run_youtube_analysis(config, channel_url=None, channel_id=None, video_limit=
                 videos_to_analyze.sort(key=lambda v: int(v.get('statistics', {}).get('viewCount', 0)), reverse=True)
                 videos_to_analyze = videos_to_analyze[:video_limit]
             analyze_content_strategy(gemini_api_key, [v['snippet']['title'] for v in videos_to_analyze])
-            questions = analyze_video_comments(youtube_service, gemini_api_key, videos_to_analyze, comment_limit, output_file_base)
-            if questions:
-                summarize_frequent_questions(gemini_api_key, questions)
+            
+            if not skip_comments:
+                questions = analyze_video_comments(youtube_service, gemini_api_key, videos_to_analyze, comment_limit, output_file_base)
+                if questions:
+                    summarize_frequent_questions(gemini_api_key, questions)
+            else:
+                print("\n--- Skipping comment analysis as per user request. ---")
     
     print(f"\n--- YouTube Analysis complete. ---")
