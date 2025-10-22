@@ -193,6 +193,11 @@ def handle_micro_analysis_command(args, config):
     )
 
 
+def handle_meso_analysis_command(args, config):
+    print("--- Meso Analysis (Thumbnail Analysis) is not yet implemented. ---")
+    # Placeholder for future implementation
+    pass
+
 def handle_external_analysis_command(args, config):
 
     discover_analyzer.run_discover_analysis(
@@ -256,6 +261,16 @@ def main():
     parser_micro.add_argument('--comment_limit', type=int, default=15, help='Number of comments to fetch per video.')
     parser_micro.add_argument('--output_file', type=str, default=None, help='Base name for the output file (e.g., my_analysis). Extension is added automatically.')
     parser_micro.set_defaults(func=handle_micro_analysis_command)
+
+    # --- Meso Analysis Parser (YouTube) ---
+    parser_meso = subparsers.add_parser('meso-analysis', help='Analyze a YouTube channel (Meso level: thumbnails).')
+    group_meso = parser_meso.add_mutually_exclusive_group(required=True)
+    group_meso.add_argument('--channel_url', type=str, help='The URL of the YouTube channel.')
+    group_meso.add_argument('--channel_id', type=str, help='The direct ID (UC...) of the channel.')
+    parser_meso.add_argument('--video_limit', type=int, default=10, help='Number of videos to analyze.')
+    parser_meso.add_argument('--sort_by', type=str, default='popular', choices=['popular', 'newest'], help='Method for selecting videos.')
+    parser_meso.add_argument('--output_file', type=str, default=None, help='Base name for the output file.')
+    parser_meso.set_defaults(func=handle_meso_analysis_command)
 
     # --- External Analysis Parser ---
     parser_external = subparsers.add_parser('external-analysis', help='Analyze a YouTube topic for niche opportunities.')
