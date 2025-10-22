@@ -128,7 +128,7 @@ def handle_youtube_command(args, config):
     )
 
 
-def handle_discover_command(args, config):
+def handle_external_analysis_command(args, config):
 
     discover_analyzer.run_discover_analysis(
 
@@ -193,10 +193,10 @@ def main():
 
     parser_youtube.set_defaults(func=handle_youtube_command)
 
-    # --- Discover Parser ---
-    parser_discover = subparsers.add_parser('discover', help='Analyze a YouTube topic for niche opportunities.')
-    parser_discover.add_argument('topic', type=str, help='The topic or keyword to search for.')
-    parser_discover.set_defaults(func=handle_discover_command)
+    # --- External Analysis Parser ---
+    parser_external = subparsers.add_parser('external-analysis', help='Analyze a YouTube topic for niche opportunities.')
+    parser_external.add_argument('topic', type=str, help='The topic or keyword to search for.')
+    parser_external.set_defaults(func=handle_external_analysis_command)
 
     args = main_parser.parse_args()
     args.func(args, config)
