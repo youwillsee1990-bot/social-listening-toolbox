@@ -3,6 +3,9 @@
 import google.generativeai as genai
 import json
 import sys
+import urllib.request
+import pathlib
+import mimetypes
 
 def get_gemini_analysis(gemini_api_key, prompt, is_json_output=False):
     """
@@ -119,4 +122,60 @@ def analyze_comments_batch(gemini_api_key, comments):
     else:
         print(f"ERROR: Batch comment analysis failed to produce valid results.", file=sys.stderr)
         return None
+
+def analyze_thumbnails_style(gemini_api_key, image_urls):
+    """
+    Analyzes a batch of YouTube thumbnail images using a single multimodal Gemini API call.
+    """
+    print(f"--- Analyzing {len(image_urls)} thumbnails ---")
+    
+    image_parts = []
+    for url in image_urls:
+        try:
+            # Download the image from the URL
+            with urllib.request.urlopen(url) as response:
+                image_data = response.read()
+                mime_type = response.info().get_content_type()
+                if not mime_type:
+                    mime_type = mimetypes.guess_type(url)[0]
+                
+                if mime_type and mime_type.startswith("image/"):
+                    image_parts.append({'mime_type': mime_type, 'data': image_data})
+                else:
+                    print(f"Warning: Skipped URL with non-image mime_type: {mime_type} from {url}", file=sys.stderr)
+
+        except Exception as e:
+            print(f"Warning: Could not download or process image from {url}. Error: {e}", file=sys.stderr)
+            continue
+
+    if not image_parts:
+        print("ERROR: No valid images could be downloaded for analysis.", file=sys.stderr)
+        return None
+
+    # Construct the multimodal prompt
+    prompt_parts = [
+        """As an expert YouTube channel art director, analyze the following thumbnail images from a single channel.
+For each image, provide a brief, one-sentence analysis covering the following aspects:
+1.  **Composition & Subject:** What is the main subject and how is it framed? (e.g., "Close-up on a person's expressive face on the right," "Clean product shot in the center.")
+2.  **Color & Mood:** What is the dominant color scheme and the mood it creates? (e.g., "High-contrast with vibrant yellows, creating an energetic mood.")
+3.  **Text & Typography:** Is there text? If so, describe its style. (e.g., "Bold, white, sans-serif text with a red outline for high readability.")
+
+After analyzing all images individually, provide a "## Overall Summary" section. In this summary, identify the common patterns and the overall visual strategy of this channel's thumbnails.
+Please provide the entire output in Chinese, formatted as Markdown.
+
+---
+IMAGES:
+""",
+        *image_parts
+    ]
+
+    try:
+        genai.configure(api_key=gemini_api_key)
+        # Use a model that supports vision
+        model = genai.GenerativeModel('gemini-pro-vision')
+        response = model.generate_content(prompt_parts)
+        return response.text
+    except Exception as e:
+        print(f"ERROR: An error occurred during Gemini multimodal API call. Error: {e}", file=sys.stderr)
+        return "Error: AI analysis of thumbnails failed."
 
