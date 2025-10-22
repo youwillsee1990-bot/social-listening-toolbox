@@ -9,7 +9,7 @@ A command-line tool to analyze discussions and sentiment on social media platfor
 
 *   **Reddit Analyzer**: :white_check_mark: **Functional**. Can fetch posts from subreddits and analyze them for problems/pain points.
 *   **YouTube Analyzer**: :white_check_mark: **Functional**. Provides flexible, multi-layered analysis of YouTube channels.
-*   **Discover Tool**: :construction: **Next Up / In Design**. A powerful tool to find and analyze "blue ocean" niches.
+*   **Discover Tool**: :white_check_mark: **Functional**. A powerful tool to find and analyze "blue ocean" niches.
 
 ---
 
@@ -99,7 +99,7 @@ python3 analyzer.py youtube --channel_id <UC_CHANNEL_ID> [OPTIONS]
     *   **Audience Insight:** The results, including the category, a summary, and the like count, are saved to a CSV file. This allows you to easily sort and find popular comments within each category (e.g., find the most-liked `Suggestion`).
     *   **Frequent Question Summary:** After analyzing all comments, the tool automatically aggregates all comments classified as `Question` and generates a final summary of the most frequently asked questions, which is printed to the console.
 
-### 3. Niche Discovery & Analysis (Next Up)
+### 3. Niche Discovery & Analysis
 
 This module helps you find and evaluate "blue ocean" niches by analyzing YouTube search results for a given keyword.
 
