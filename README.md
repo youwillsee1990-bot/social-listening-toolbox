@@ -7,9 +7,11 @@ A command-line tool to analyze discussions and sentiment on social media platfor
 
 ## Project Status
 
-*   **Reddit Analyzer**: :white_check_mark: **Functional**. Can fetch posts from subreddits and analyze them for problems/pain points.
-*   **YouTube Analyzer**: :white_check_mark: **Functional**. Provides flexible, multi-layered analysis of YouTube channels.
-*   **Discover Tool**: :white_check_mark: **Functional**. A powerful tool to find and analyze "blue ocean" niches.
+*   **Reddit Analyzer**: :white_check_mark: **Functional**. Can fetch and analyze posts from subreddits.
+*   **YouTube Analyzer (Refactored)**: :white_check_mark: **Functional**. The monolithic 'youtube' command has been split into clear, task-oriented commands:
+    *   `external-analysis`: Analyzes the competitive environment for a topic.
+    *   `macro-analysis`: Analyzes a channel's content strategy (titles, trends).
+    *   `micro-analysis`: Analyzes a channel's comment section for audience feedback.
 
 ---
 
@@ -53,68 +55,77 @@ python3 analyzer.py reddit [SUBREDDIT_NAMES...] --limit [NUMBER] --output_file [
 python3 analyzer.py reddit OpenAI ChatGPT --limit 50 --output_file reddit_results.csv
 ```
 
-### 2. YouTube Channel Analysis
+### 2. External Environment Analysis (YouTube)
 
-Analyzes videos and comments from a specific YouTube channel, providing both high-level strategic insights and detailed comment analysis.
+Corresponds to the **External Environment** layer of the analysis blueprint. This command helps you find and evaluate "blue ocean" niches by analyzing YouTube search results for a given keyword. (Formerly the `discover` command).
 
 **Command:**
 ```bash
-python3 analyzer.py youtube --channel_id <UC_CHANNEL_ID> [OPTIONS]
+python3 analyzer.py external-analysis "your_topic"
+```
+
+**Analysis Features:**
+*   **:ocean: Content Freshness Analysis:** Checks the publication dates of top-ranking videos to see if new content can rank easily.
+*   **:beginner: Channel Authority Analysis:** Checks the subscriber counts of ranking channels to see if the niche is friendly to new creators.
+
+**Example:**
+```bash
+python3 analyzer.py external-analysis "AI Agent Automation"
+```
+
+---
+
+### 3. Macro-level Channel Analysis (YouTube)
+
+Corresponds to the **Macro Strategy** layer of the analysis blueprint. This is a **low-cost** command that analyzes a channel's video titles to understand its content strategy and evolution.
+
+**Command:**
+```bash
+python3 analyzer.py macro-analysis --channel_id <UC_CHANNEL_ID> [OPTIONS]
 ```
 
 **Available Arguments:**
 *   `--channel_id` / `--channel_url`: The ID or URL of the channel to analyze.
-*   `--video_limit`: Number of videos to analyze (default: 10). How this is applied depends on the `--sort_by` flag.
-*   `--sort_by`: Method for selecting videos. (default: `popular`)
-    *   `popular`: Analyzes the most-viewed videos. **Note:** This requires fetching the entire video list first and can be slow on large channels.
-    *   `newest`: Analyzes the most recently published videos. This is very fast and ideal for quick tests.
-*   `--analyze_trends`: A flag to enable in-depth analysis of content strategy evolution. When used, the tool will compare the channel's oldest videos to its newest videos. This requires fetching all videos and will be slow.
-*   `--comment_limit`: Number of comments to fetch per video (default: 15).
-*   `--output_file`: Name for the output CSV file for comment analysis.
+*   `--video_limit`: Number of videos to analyze (default: 10).
+*   `--sort_by`: `newest` or `popular`. Method for selecting videos.
+*   `--analyze_trends`: A flag to enable in-depth analysis of content strategy evolution by comparing the oldest and newest videos.
+*   `--output_file`: Base name for the output `.md` report.
 
 **Examples:**
 
-*   **Quickly analyze the 5 newest videos:**
+*   **Analyze the 15 newest videos:**
     ```bash
-    python3 analyzer.py youtube --channel_id <UC_CHANNEL_ID> --sort_by newest --video_limit 5
-    ```
-
-*   **Deeply analyze the 20 most popular videos:**
-    ```bash
-    python3 analyzer.py youtube --channel_id <UC_CHANNEL_ID> --sort_by popular --video_limit 20
+    python3 analyzer.py macro-analysis --channel_id <UC_CHANNEL_ID> --sort_by newest --video_limit 15
     ```
 
 *   **Run a full strategy evolution analysis:**
     ```bash
-    python3 analyzer.py youtube --channel_id <UC_CHANNEL_ID> --analyze_trends
+    python3 analyzer.py macro-analysis --channel_id <UC_CHANNEL_ID> --analyze_trends
     ```
 
-**Analysis Features:**
+---
 
-*   **Macro Analysis (Channel-level):**
-    *   **Content Strategy:** Identifies main content themes by analyzing video titles.
-    *   **Strategy Trend Analysis (via `--analyze_trends`):** Compares the oldest and newest videos to identify shifts in content strategy over time, including time-point estimations.
-*   **Micro Analysis (Comment-level):**
-    *   **Comment Mining & Classification:** For each comment, the tool fetches its text and like count. It then uses AI to classify the comment into one of the following categories: `Positive Feedback`, `Negative Sentiment`, `Question`, or `Suggestion`.
-    *   **Audience Insight:** The results, including the category, a summary, and the like count, are saved to a CSV file. This allows you to easily sort and find popular comments within each category (e.g., find the most-liked `Suggestion`).
-    *   **Frequent Question Summary:** After analyzing all comments, the tool automatically aggregates all comments classified as `Question` and generates a final summary of the most frequently asked questions, which is printed to the console.
+### 4. Micro-level Comment Analysis (YouTube)
 
-### 3. Niche Discovery & Analysis
+Corresponds to the **Micro Interaction** layer of the analysis blueprint. This is a **high-cost** command that performs deep analysis on a channel's comment section to understand audience feedback.
 
-This module helps you find and evaluate "blue ocean" niches by analyzing YouTube search results for a given keyword.
+**Command:**
+```bash
+python3 analyzer.py micro-analysis --channel_id <UC_CHANNEL_ID> [OPTIONS]
+```
 
-**Command:** `python3 analyzer.py discover --topic "your keyword"`
+**Available Arguments:**
+*   `--channel_id` / `--channel_url`: The ID or URL of the channel to analyze.
+*   `--video_limit`: Number of videos to fetch comments from (default: 10).
+*   `--sort_by`: `newest` or `popular`. Method for selecting which videos to analyze.
+*   `--comment_limit`: Number of comments to fetch per video (default: 15).
+*   `--output_file`: Base name for the output `.csv` and `.html` reports.
 
-When run, the tool will perform two key analyses on the top search results:
-
-*   **:ocean: Content Freshness Analysis:**
-    *   **What it does:** Checks the publication dates of the top-ranking videos.
-    *   **Why it matters:** If the search results are dominated by old videos, it signals a golden opportunity for new content to rank quickly.
-
-*   **:beginner: Channel Authority Analysis:**
-    *   **What it does:** Checks the subscriber counts of the channels behind the top-ranking videos.
-    *   **Why it matters:** If the results page features many small channels, it proves that the niche is friendly for new creators to compete.
-
+**Example:**
+```bash
+# Analyze comments from the 5 most popular videos, 20 comments each
+python3 analyzer.py micro-analysis --channel_id <UC_CHANNEL_ID> --sort_by popular --video_limit 5 --comment_limit 20
+```
 ### 4. Future Features (Planned)
 
 *   **:rocket: SEO Recommendations Engine:** An advanced module that provides actionable SEO advice for your own channel based on the analysis of a target channel.
