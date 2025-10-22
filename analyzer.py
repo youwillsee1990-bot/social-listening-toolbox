@@ -54,77 +54,44 @@ def handle_reddit_command(args, config):
 
 
 
-def handle_youtube_command(args, config):
-
+def handle_macro_analysis_command(args, config):
     if args.output_file:
         output_filename_base = os.path.join("output", args.output_file)
     else:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-
-        base_name = "youtube"
-
-        try:
-
-            youtube_service = youtube_analyzer.get_youtube_service(config)
-
-            if not youtube_service:
-
-                raise Exception("Could not build YouTube Service for filename generation.")
-
-            
-
-            channel_id = args.channel_id
-
-            if not channel_id:
-
-                channel_id = youtube_analyzer.get_channel_id_from_url(youtube_service, args.channel_url)
-
-
-
-            if channel_id:
-
-                request = youtube_service.channels().list(part="snippet", id=channel_id)
-
-                response = request.execute()
-
-                if response.get('items'):
-
-                    base_name = sanitize_filename(response['items'][0]['snippet']['title'])
-
-        except Exception as e:
-
-            print(f"Warning: Could not fetch channel name for filename. Using default. Error: {e}", file=sys.stderr)
-
-            base_name = "youtube_analysis"
-
-
-
-        sub_type = "trends" if args.analyze_trends else args.sort_by
-
-        output_filename_base = os.path.join("output", f"{base_name}_youtube_{sub_type}_{timestamp}")
-
-
+        # Simplified filename for now
+        output_filename_base = os.path.join("output", f"macro_analysis_{timestamp}")
 
     youtube_analyzer.run_youtube_analysis(
-
         config=config,
-
         channel_url=args.channel_url,
-
         channel_id=args.channel_id,
-
         video_limit=args.video_limit,
-
         sort_by=args.sort_by,
-
         analyze_trends=args.analyze_trends,
+        skip_comments=True, # MACRO: Always skip comments
+        output_file_base=output_filename_base,
+        comment_limit=0 # Pass a dummy value
+    )
 
+def handle_micro_analysis_command(args, config):
+    if args.output_file:
+        output_filename_base = os.path.join("output", args.output_file)
+    else:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        # Simplified filename for now
+        output_filename_base = os.path.join("output", f"micro_analysis_{timestamp}")
+
+    youtube_analyzer.run_youtube_analysis(
+        config=config,
+        channel_url=args.channel_url,
+        channel_id=args.channel_id,
+        video_limit=args.video_limit,
+        sort_by=args.sort_by,
         comment_limit=args.comment_limit,
-
-        skip_comments=args.skip_comments,
-
+        skip_comments=False, # MICRO: Never skip comments
+        analyze_trends=False, # MICRO: Trends is a macro concept
         output_file_base=output_filename_base
-
     )
 
 
@@ -170,28 +137,27 @@ def main():
 
 
 
-    # --- YouTube Parser ---
+    # --- Macro Analysis Parser (YouTube) ---
+    parser_macro = subparsers.add_parser('macro-analysis', help='Analyze a YouTube channel (Macro level: titles, trends). Low cost.')
+    group_macro = parser_macro.add_mutually_exclusive_group(required=True)
+    group_macro.add_argument('--channel_url', type=str, help='The URL of the YouTube channel.')
+    group_macro.add_argument('--channel_id', type=str, help='The direct ID (UC...) of the channel.')
+    parser_macro.add_argument('--video_limit', type=int, default=10, help='Number of videos to analyze.')
+    parser_macro.add_argument('--sort_by', type=str, default='popular', choices=['popular', 'newest'], help='Method for selecting videos.')
+    parser_macro.add_argument('--analyze_trends', action='store_true', help='Enable content strategy evolution analysis.')
+    parser_macro.add_argument('--output_file', type=str, default=None, help='Base name for the output file (e.g., my_analysis). Extension is added automatically.')
+    parser_macro.set_defaults(func=handle_macro_analysis_command)
 
-    parser_youtube = subparsers.add_parser('youtube', help='Analyze a YouTube channel.')
-
-    group = parser_youtube.add_mutually_exclusive_group(required=True)
-
-    group.add_argument('--channel_url', type=str, help='The URL of the YouTube channel.')
-
-    group.add_argument('--channel_id', type=str, help='The direct ID (UC...) of the channel.')
-
-    parser_youtube.add_argument('--video_limit', type=int, default=10, help='Number of videos to analyze.')
-
-    parser_youtube.add_argument('--sort_by', type=str, default='popular', choices=['popular', 'newest'], help='Method for selecting videos.')
-
-    parser_youtube.add_argument('--analyze_trends', action='store_true', help='Enable content strategy evolution analysis.')
-
-    parser_youtube.add_argument('--skip-comments', action='store_true', help='Skip fetching and analyzing comments to save costs.')
-    parser_youtube.add_argument('--comment_limit', type=int, default=15, help='Number of comments to fetch per video.')
-
-    parser_youtube.add_argument('--output_file', type=str, default=None, help='Base name for the output file (e.g., my_analysis). Extension is added automatically.')
-
-    parser_youtube.set_defaults(func=handle_youtube_command)
+    # --- Micro Analysis Parser (YouTube) ---
+    parser_micro = subparsers.add_parser('micro-analysis', help='Analyze a YouTube channel (Micro level: comments). High cost.')
+    group_micro = parser_micro.add_mutually_exclusive_group(required=True)
+    group_micro.add_argument('--channel_url', type=str, help='The URL of the YouTube channel.')
+    group_micro.add_argument('--channel_id', type=str, help='The direct ID (UC...) of the channel.')
+    parser_micro.add_argument('--video_limit', type=int, default=10, help='Number of videos to analyze.')
+    parser_micro.add_argument('--sort_by', type=str, default='popular', choices=['popular', 'newest'], help='Method for selecting videos.')
+    parser_micro.add_argument('--comment_limit', type=int, default=15, help='Number of comments to fetch per video.')
+    parser_micro.add_argument('--output_file', type=str, default=None, help='Base name for the output file (e.g., my_analysis). Extension is added automatically.')
+    parser_micro.set_defaults(func=handle_micro_analysis_command)
 
     # --- External Analysis Parser ---
     parser_external = subparsers.add_parser('external-analysis', help='Analyze a YouTube topic for niche opportunities.')
