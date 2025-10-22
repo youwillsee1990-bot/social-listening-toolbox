@@ -12,6 +12,7 @@ A command-line tool to analyze discussions and sentiment on social media platfor
     *   `external-analysis`: Analyzes the competitive environment for a topic.
     *   `macro-analysis`: Analyzes a channel's content strategy (titles, trends).
     *   `micro-analysis`: Analyzes a channel's comment section for audience feedback.
+    *   `meso-analysis`: Analyzes a channel's thumbnail visual strategy.
 
 ---
 
@@ -129,7 +130,3 @@ python3 analyzer.py micro-analysis --channel_id <UC_CHANNEL_ID> --sort_by popula
 ### 5. Future Features (Planned)
 
 *   **:rocket: SEO Recommendations Engine:** An advanced module that provides actionable SEO advice for your own channel based on the analysis of a target channel.
-
-*   **:art: Thumbnail Style Analysis:** A multi-modal analysis feature to understand the visual strategy of thumbnails.
-    *   **Style Summary:** For a given channel, analyze the composition, use of text, color schemes, and emotional expression in its thumbnails.
-    *   **Style Evolution:** When running trend analysis, compare old and new thumbnails to report on how a channel's visual branding has evolved over time.
