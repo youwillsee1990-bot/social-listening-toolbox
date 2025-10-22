@@ -18,7 +18,7 @@ def get_gemini_analysis(gemini_api_key, prompt, is_json_output=False):
     """
     try:
         genai.configure(api_key=gemini_api_key)
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        model = genai.GenerativeModel('gemini-2.5-pro')
     except Exception as e:
         print(f"ERROR: Failed to configure Gemini API. Check your key. Error: {e}", file=sys.stderr)
         return None # Return None instead of raising to allow graceful failure
@@ -115,7 +115,7 @@ def analyze_comments_batch(gemini_api_key, comments):
     if analysis_result and 'results' in analysis_result:
         # Remap the list of results into a dictionary keyed by the original comment ID
         # This makes it easy to look up results for each comment.
-        return {{result['id']: result for result in analysis_result['results']}}
+        return {result['id']: result for result in analysis_result['results']}
     else:
         print(f"ERROR: Batch comment analysis failed to produce valid results.", file=sys.stderr)
         return None
