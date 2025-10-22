@@ -277,16 +277,14 @@ def run_meso_analysis(config, channel_url=None, channel_id=None, video_limit=10,
 
     print(f"--- Extracted {len(thumbnail_urls)} thumbnail URLs to analyze. ---")
     
-    # --- Placeholder for future multimodal analysis ---
-    print("--- Multimodal analysis not yet implemented. ---")
-    # report_content = utils.analyze_thumbnails_style(gemini_api_key, thumbnail_urls)
-    # if report_content:
-    #     md_file = output_file_base + '.md'
-    #     print(f"--- Saving thumbnail analysis report to {md_file} ---")
-    #     try:
-    #         with open(md_file, 'w', encoding='utf-8') as f:
-    #             f.write(report_content)
-    #     except Exception as e:
-    #         print(f"ERROR: Could not write markdown report. Error: {e}", file=sys.stderr)
+    report_content = utils.analyze_thumbnails_style(gemini_api_key, thumbnail_urls)
+    if report_content:
+        md_file = output_file_base + '.md'
+        print(f"--- Saving thumbnail analysis report to {md_file} ---")
+        try:
+            with open(md_file, 'w', encoding='utf-8') as f:
+                f.write(report_content)
+        except Exception as e:
+            print(f"ERROR: Could not write markdown report. Error: {e}", file=sys.stderr)
     
     print(f"\n--- YouTube Meso Analysis complete. ---")
