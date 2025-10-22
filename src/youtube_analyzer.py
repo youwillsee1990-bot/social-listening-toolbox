@@ -240,4 +240,53 @@ def run_micro_analysis(config, channel_url=None, channel_id=None, video_limit=10
         if questions:
             summarize_frequent_questions(gemini_api_key, questions)
 
-    print(f"\n--- YouTube Micro Analysis complete. ---")
+def run_meso_analysis(config, channel_url=None, channel_id=None, video_limit=10, sort_by='popular', output_file_base="meso_analysis"):
+    print(f"--- Initializing YouTube Meso Analysis (Thumbnail Analysis) ---")
+    youtube_service = get_youtube_service(config)
+    if not youtube_service:
+        return
+    if not channel_id:
+        channel_id = get_channel_id_from_url(youtube_service, channel_url)
+    if not channel_id:
+        return
+    print(f"--- Successfully confirmed Channel ID: {channel_id} ---")
+    gemini_api_key = config['GEMINI']['API_KEY']
+
+    videos_to_analyze = get_channel_videos(youtube_service, channel_id, sort_by, video_limit)
+    if not videos_to_analyze:
+        print("--- No videos found to analyze. Exiting. ---")
+        return
+
+    thumbnail_urls = []
+    for video in videos_to_analyze:
+        thumbnails = video.get('snippet', {}).get('thumbnails', {})
+        # Prioritize maxres, then high, then standard, then medium
+        if 'maxres' in thumbnails:
+            url = thumbnails['maxres']['url']
+        elif 'high' in thumbnails:
+            url = thumbnails['high']['url']
+        elif 'standard' in thumbnails:
+            url = thumbnails['standard']['url']
+        elif 'medium' in thumbnails:
+            url = thumbnails['medium']['url']
+        else:
+            url = None
+        
+        if url:
+            thumbnail_urls.append(url)
+
+    print(f"--- Extracted {len(thumbnail_urls)} thumbnail URLs to analyze. ---")
+    
+    # --- Placeholder for future multimodal analysis ---
+    print("--- Multimodal analysis not yet implemented. ---")
+    # report_content = utils.analyze_thumbnails_style(gemini_api_key, thumbnail_urls)
+    # if report_content:
+    #     md_file = output_file_base + '.md'
+    #     print(f"--- Saving thumbnail analysis report to {md_file} ---")
+    #     try:
+    #         with open(md_file, 'w', encoding='utf-8') as f:
+    #             f.write(report_content)
+    #     except Exception as e:
+    #         print(f"ERROR: Could not write markdown report. Error: {e}", file=sys.stderr)
+    
+    print(f"\n--- YouTube Meso Analysis complete. ---")
