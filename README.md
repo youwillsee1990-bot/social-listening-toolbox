@@ -126,7 +126,7 @@ python3 analyzer.py micro-analysis --channel_id <UC_CHANNEL_ID> [OPTIONS]
 # Analyze comments from the 5 most popular videos, 20 comments each
 python3 analyzer.py micro-analysis --channel_id <UC_CHANNEL_ID> --sort_by popular --video_limit 5 --comment_limit 20
 ```
-### 4. Future Features (Planned)
+### 5. Future Features (Planned)
 
 *   **:rocket: SEO Recommendations Engine:** An advanced module that provides actionable SEO advice for your own channel based on the analysis of a target channel.
 
