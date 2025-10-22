@@ -125,14 +125,13 @@ def analyze_comments_batch(gemini_api_key, comments):
 
 def analyze_thumbnails_style(gemini_api_key, image_urls):
     """
-    Analyzes a batch of YouTube thumbnail images using a single multimodal Gemini API call.
+    Analyzes a batch of YouTube thumbnail images and returns actionable advice.
     """
-    print(f"--- Analyzing {len(image_urls)} thumbnails ---")
+    print(f"--- Analyzing {len(image_urls)} thumbnails for actionable advice ---")
     
     image_parts = []
     for url in image_urls:
         try:
-            # Download the image from the URL
             with urllib.request.urlopen(url) as response:
                 image_data = response.read()
                 mime_type = response.info().get_content_type()
@@ -152,16 +151,15 @@ def analyze_thumbnails_style(gemini_api_key, image_urls):
         print("ERROR: No valid images could be downloaded for analysis.", file=sys.stderr)
         return None
 
-    # Construct the multimodal prompt
     prompt_parts = [
-        """As an expert YouTube channel art director, analyze the following thumbnail images from a single channel.
-For each image, provide a brief, one-sentence analysis covering the following aspects:
-1.  **Composition & Subject:** What is the main subject and how is it framed? (e.g., "Close-up on a person's expressive face on the right," "Clean product shot in the center.")
-2.  **Color & Mood:** What is the dominant color scheme and the mood it creates? (e.g., "High-contrast with vibrant yellows, creating an energetic mood.")
-3.  **Text & Typography:** Is there text? If so, describe its style. (e.g., "Bold, white, sans-serif text with a red outline for high readability.")
+        """You are an expert YouTube channel art director. Your task is to analyze a set of thumbnail images from a successful channel and provide actionable advice for another creator to improve their own thumbnails.
 
-After analyzing all images individually, provide a "## Overall Summary" section. In this summary, identify the common patterns and the overall visual strategy of this channel's thumbnails.
-Please provide the entire output in Chinese, formatted as Markdown.
+Follow these steps in your reasoning process, but ONLY output the final "Actionable Advice" section:
+1.  **Observe:** Mentally analyze each of the following thumbnail images. For each, consider its composition, subject, color scheme, mood, and use of text.
+2.  **Summarize Patterns:** Based on your observations, internally summarize the common visual patterns and the overall visual strategy of this channel's thumbnails.
+3.  **Generate Actionable Advice:** Based on the summarized patterns, generate a concise, bulleted list of 3-5 actionable recommendations for a creator looking to adopt a similar successful style. Each recommendation should be clear, specific, and easy to implement.
+
+Your final output MUST be ONLY the "## Actionable Advice" section, formatted as Markdown, in Chinese.
 
 ---
 IMAGES:
@@ -171,8 +169,7 @@ IMAGES:
 
     try:
         genai.configure(api_key=gemini_api_key)
-        # Use a model that supports vision
-        model = genai.GenerativeModel('gemini-pro-vision')
+        model = genai.GenerativeModel('gemini-2.5-pro')
         response = model.generate_content(prompt_parts)
         return response.text
     except Exception as e:
