@@ -162,8 +162,8 @@ def analyze_video_comments(youtube_service, gemini_api_key, videos_to_analyze, c
     write_html_report(analysis_results, output_file_base)
     return all_questions
 
-def run_youtube_analysis(config, channel_url=None, channel_id=None, video_limit=10, sort_by='popular', analyze_trends=False, comment_limit=15, skip_comments=False, output_file_base="youtube_analysis"):
-    print(f"--- Initializing YouTube Analysis Module ---")
+def run_macro_analysis(config, channel_url=None, channel_id=None, video_limit=10, sort_by='popular', analyze_trends=False, output_file_base="macro_analysis"):
+    print(f"--- Initializing YouTube Macro Analysis ---")
     youtube_service = get_youtube_service(config)
     if not youtube_service:
         return
@@ -201,12 +201,29 @@ def run_youtube_analysis(config, channel_url=None, channel_id=None, video_limit=
                         f.write(report_content)
                 except Exception as e:
                     print(f"ERROR: Could not write markdown report. Error: {e}", file=sys.stderr)
-            
-            if not skip_comments:
-                questions = analyze_video_comments(youtube_service, gemini_api_key, videos_to_analyze, comment_limit, output_file_base)
-                if questions:
-                    summarize_frequent_questions(gemini_api_key, questions)
-            else:
-                print("\n--- Skipping comment analysis as per user request. ---")
     
-    print(f"\n--- YouTube Analysis complete. ---")
+    print(f"\n--- YouTube Macro Analysis complete. ---")
+
+def run_micro_analysis(config, channel_url=None, channel_id=None, video_limit=10, sort_by='popular', comment_limit=15, output_file_base="micro_analysis"):
+    print(f"--- Initializing YouTube Micro Analysis ---")
+    youtube_service = get_youtube_service(config)
+    if not youtube_service:
+        return
+    if not channel_id:
+        channel_id = get_channel_id_from_url(youtube_service, channel_url)
+    if not channel_id:
+        return
+    print(f"--- Successfully confirmed Channel ID: {channel_id} ---")
+    gemini_api_key = config['GEMINI']['API_KEY']
+
+    videos_to_analyze = get_channel_videos(youtube_service, channel_id, sort_by, video_limit)
+    if videos_to_analyze:
+        if sort_by == 'popular':
+            videos_to_analyze.sort(key=lambda v: int(v.get('statistics', {}).get('viewCount', 0)), reverse=True)
+            videos_to_analyze = videos_to_analyze[:video_limit]
+        
+        questions = analyze_video_comments(youtube_service, gemini_api_key, videos_to_analyze, comment_limit, output_file_base)
+        if questions:
+            summarize_frequent_questions(gemini_api_key, questions)
+
+    print(f"\n--- YouTube Micro Analysis complete. ---")

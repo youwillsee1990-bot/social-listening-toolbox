@@ -55,43 +55,141 @@ def handle_reddit_command(args, config):
 
 
 def handle_macro_analysis_command(args, config):
+
+
+
     if args.output_file:
+
+
+
         output_filename_base = os.path.join("output", args.output_file)
+
+
+
     else:
+
+
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+
+
         # Simplified filename for now
+
+
+
         output_filename_base = os.path.join("output", f"macro_analysis_{timestamp}")
 
-    youtube_analyzer.run_youtube_analysis(
+
+
+
+
+
+
+    youtube_analyzer.run_macro_analysis(
+
+
+
         config=config,
+
+
+
         channel_url=args.channel_url,
+
+
+
         channel_id=args.channel_id,
+
+
+
         video_limit=args.video_limit,
+
+
+
         sort_by=args.sort_by,
+
+
+
         analyze_trends=args.analyze_trends,
-        skip_comments=True, # MACRO: Always skip comments
-        output_file_base=output_filename_base,
-        comment_limit=0 # Pass a dummy value
+
+
+
+        output_file_base=output_filename_base
+
+
+
     )
 
+
+
+
+
+
+
 def handle_micro_analysis_command(args, config):
+
+
+
     if args.output_file:
+
+
+
         output_filename_base = os.path.join("output", args.output_file)
+
+
+
     else:
+
+
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+
+
         # Simplified filename for now
+
+
+
         output_filename_base = os.path.join("output", f"micro_analysis_{timestamp}")
 
-    youtube_analyzer.run_youtube_analysis(
+
+
+
+
+
+
+    youtube_analyzer.run_micro_analysis(
+
+
+
         config=config,
+
+
+
         channel_url=args.channel_url,
+
+
+
         channel_id=args.channel_id,
+
+
+
         video_limit=args.video_limit,
+
+
+
         sort_by=args.sort_by,
+
+
+
         comment_limit=args.comment_limit,
-        skip_comments=False, # MICRO: Never skip comments
-        analyze_trends=False, # MICRO: Trends is a macro concept
+
+
+
         output_file_base=output_filename_base
+
+
+
     )
 
 
