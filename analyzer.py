@@ -194,9 +194,20 @@ def handle_micro_analysis_command(args, config):
 
 
 def handle_meso_analysis_command(args, config):
-    print("--- Meso Analysis (Thumbnail Analysis) is not yet implemented. ---")
-    # Placeholder for future implementation
-    pass
+    if args.output_file:
+        output_filename_base = os.path.join("output", args.output_file)
+    else:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        output_filename_base = os.path.join("output", f"meso_analysis_{timestamp}")
+
+    youtube_analyzer.run_meso_analysis(
+        config=config,
+        channel_url=args.channel_url,
+        channel_id=args.channel_id,
+        video_limit=args.video_limit,
+        sort_by=args.sort_by,
+        output_file_base=output_filename_base
+    )
 
 def handle_external_analysis_command(args, config):
 
