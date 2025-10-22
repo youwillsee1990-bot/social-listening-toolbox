@@ -176,3 +176,46 @@ IMAGES:
         print(f"ERROR: An error occurred during Gemini multimodal API call. Error: {e}", file=sys.stderr)
         return "Error: AI analysis of thumbnails failed."
 
+def analyze_posts_batch(gemini_api_key, posts):
+    """
+    Analyzes a batch of Reddit posts to identify which ones are problem posts.
+
+    Args:
+        gemini_api_key (str): The API key for Gemini.
+        posts (list): A list of post-like objects, each with an 'id', 'title', and 'snippet'.
+
+    Returns:
+        A set of post IDs that are identified as problem posts, or None on failure.
+    """
+    prompt_posts = []
+    for i, post in enumerate(posts):
+        # Use a simple index as the ID for this batch
+        post['id'] = i
+        # Combine title and a snippet of the body for analysis
+        text_to_analyze = f"Title: {post['title']}\n\nBody Snippet: {post['snippet']}"
+        prompt_posts.append(f'{i}: "{text_to_analyze}"')
+
+    prompt_posts_str = "\n---\n".join(prompt_posts)
+
+    prompt = f'''
+    Analyze each of the following numbered items, each representing a Reddit post with a title and a body snippet.
+    For each item, determine if it expresses a problem, question, or significant negative feedback.
+
+    Your response MUST be a single valid JSON object. This object should contain a single key, "problem_post_ids", which is an array of integers.
+    This array should ONLY contain the IDs of the items that you have identified as being a problem, question, or negative feedback.
+
+    Here is the list of items to analyze:
+    ---
+    {prompt_posts_str}
+    ---
+
+    Provide your response as a single JSON object with the "problem_post_ids" key.
+    '''
+    
+    analysis_result = get_gemini_analysis(gemini_api_key, prompt, is_json_output=True)
+
+    if analysis_result and 'problem_post_ids' in analysis_result and isinstance(analysis_result['problem_post_ids'], list):
+        return set(analysis_result['problem_post_ids'])
+    else:
+        print(f"ERROR: Batch post analysis failed to produce valid results.", file=sys.stderr)
+        return None

@@ -33,42 +33,53 @@ def get_reddit_posts(config, subreddits, limit, time_filter):
     print(f"--- [Reddit] Fetched a total of {len(all_posts)} posts. ---")
     return all_posts
 
-def run_reddit_analysis(config, subreddits, limit, time_filter, output_file_base):
-    """Main function to run the Reddit analysis."""
+def run_reddit_analysis(config, subreddits, limit, time_filter, output_file_base, snippet_length=500):
+    """Main function to run the Reddit analysis using batch processing."""
     posts = get_reddit_posts(config, subreddits, limit, time_filter)
 
     if not posts:
         print("--- No posts found. Exiting Reddit analysis. ---")
         return
 
+    print(f"--- Starting batch analysis of {len(posts)} posts with Gemini... ---")
+    gemini_api_key = config['GEMINI']['API_KEY']
+
+    # Prepare posts for batch analysis
+    posts_for_batch = []
+    for i, post in enumerate(posts):
+        posts_for_batch.append({
+            'id': i,
+            'title': post.title,
+            'snippet': post.selftext[:snippet_length]
+        })
+
+    # Call the batch analysis function
+    problem_post_ids = utils.analyze_posts_batch(gemini_api_key, posts_for_batch)
+
+    if problem_post_ids is None:
+        print("--- AI analysis failed. No report will be generated. ---")
+        return
+
+    problem_posts_count = len(problem_post_ids)
+    total_posts = len(posts)
+
+    # Write the results to a CSV
     output_file = output_file_base + ".csv"
-    print(f"--- Creating output file: {output_file} ---")
+    print(f"--- Found {problem_posts_count} problem posts. Creating output file: {output_file} ---")
+    
     with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['subreddit', 'title', 'url', 'score', 'is_problem_post', 'problem_summary', 'tags']
+        # Note: No 'problem_summary' or 'tags' as we are doing a simple classification
+        fieldnames = ['subreddit', 'title', 'url', 'score']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
-        total_posts = len(posts)
-        problem_posts_count = 0
-        print(f"--- Starting analysis of {total_posts} posts with Gemini... ---")
-
-        gemini_api_key = config['GEMINI']['API_KEY']
-
         for i, post in enumerate(posts):
-            print(f"Analyzing post {i+1}/{total_posts}: \"{post.title[:50]}...\"")
-            # Use the utility function for analysis
-            ai_analysis = utils.analyze_post_with_gemini(gemini_api_key, post.title, post.selftext)
-
-            if ai_analysis and ai_analysis.get('is_problem_post'):
-                problem_posts_count += 1
+            if i in problem_post_ids:
                 writer.writerow({
                     'subreddit': post.subreddit.display_name,
                     'title': post.title,
                     'url': post.url,
-                    'score': post.score,
-                    'is_problem_post': True,
-                    'problem_summary': ai_analysis.get('problem_summary'),
-                    'tags': ', '.join(ai_analysis.get('tags', []))
+                    'score': post.score
                 })
 
     print("\n--- Reddit Analysis Complete ---")
@@ -79,4 +90,4 @@ def run_reddit_analysis(config, subreddits, limit, time_filter, output_file_base
         print(f"Problem Density: {problem_density:.2f}%")
     else:
         print("No posts were analyzed.")
-    print(f"Results saved to {output_file}")
+    print(f"List of problem posts saved to {output_file}")
