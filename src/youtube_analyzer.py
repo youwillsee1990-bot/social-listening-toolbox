@@ -130,9 +130,21 @@ def analyze_video_comments(youtube_service, gemini_api_key, videos_to_analyze, c
     analysis_results = []
     all_questions = []
     for video in videos_to_analyze:
+        print(f"  - Analyzing comments for video: {video['snippet']['title'][:50]}...")
         comments = get_video_comments(youtube_service, video['id'], comment_limit)
-        for comment in comments:
-            ai_analysis = utils.analyze_comment_sentiment(gemini_api_key, comment['text'])
+        if not comments:
+            continue
+
+        # Use the new batch analysis function
+        batch_results = utils.analyze_comments_batch(gemini_api_key, comments)
+
+        if not batch_results:
+            print(f"    - Warning: Batch analysis failed for video {video['id']}.")
+            continue
+
+        # Process the results from the batch call
+        for i, comment in enumerate(comments):
+            ai_analysis = batch_results.get(i) # Get analysis by the ID we assigned
             if ai_analysis and ai_analysis.get('category'):
                 result = {
                     'video_title': video['snippet']['title'],
@@ -145,7 +157,9 @@ def analyze_video_comments(youtube_service, gemini_api_key, videos_to_analyze, c
                 analysis_results.append(result)
                 if ai_analysis['category'] == 'Question':
                     all_questions.append(ai_analysis['summary'])
+
     if not analysis_results:
+        print("\n--- No comments were analyzed successfully. ---")
         return []
     
     csv_file = output_file_base + '.csv'
