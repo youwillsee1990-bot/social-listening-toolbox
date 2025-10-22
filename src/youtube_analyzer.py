@@ -192,7 +192,15 @@ def run_youtube_analysis(config, channel_url=None, channel_id=None, video_limit=
             if sort_by == 'popular':
                 videos_to_analyze.sort(key=lambda v: int(v.get('statistics', {}).get('viewCount', 0)), reverse=True)
                 videos_to_analyze = videos_to_analyze[:video_limit]
-            analyze_content_strategy(gemini_api_key, [v['snippet']['title'] for v in videos_to_analyze])
+            report_content = analyze_content_strategy(gemini_api_key, [v['snippet']['title'] for v in videos_to_analyze])
+            if report_content:
+                md_file = output_file_base + '.md'
+                print(f"--- Saving content strategy report to {md_file} ---")
+                try:
+                    with open(md_file, 'w', encoding='utf-8') as f:
+                        f.write(report_content)
+                except Exception as e:
+                    print(f"ERROR: Could not write markdown report. Error: {e}", file=sys.stderr)
             
             if not skip_comments:
                 questions = analyze_video_comments(youtube_service, gemini_api_key, videos_to_analyze, comment_limit, output_file_base)
