@@ -7,26 +7,50 @@ relevant subreddits for a given topic.
 """
 
 import sys
-# We will need utils later, but not for the placeholder
-# import utils 
+import praw
 
 def find_subreddits(config, topic, limit=10):
     """
-    Searches for subreddits related to a topic and returns a ranked list.
-    (This is a placeholder implementation)
+    Searches for subreddits related to a topic using the Reddit API and returns a ranked list.
     """
-    print(f"--- Searching for subreddits related to: '{topic}' ---")
-    # In the future, this will call the Reddit API.
-    # For now, let's return a dummy list.
-    dummy_subreddits = [
-        {'name': 'r/artificial', 'subscribers': 1500000},
-        {'name': 'r/singularity', 'subscribers': 900000},
-        {'name': 'r/LocalLLaMA', 'subscribers': 80000},
-        {'name': 'r/OpenAI', 'subscribers': 2500000},
-        {'name': 'r/MachineLearning', 'subscribers': 2800000},
-    ]
-    print(f"--- Found {len(dummy_subreddits)} potential subreddits. ---")
-    return dummy_subreddits
+    print(f"--- Connecting to Reddit to search for subreddits related to: '{topic}' ---")
+    try:
+        reddit = praw.Reddit(
+            client_id=config['REDDIT']['CLIENT_ID'],
+            client_secret=config['REDDIT']['CLIENT_SECRET'],
+            user_agent=config['REDDIT']['USER_AGENT'],
+            read_only=True
+        )
+        reddit.user.me() # A quick check to see if credentials are valid
+    except Exception as e:
+        print(f"ERROR: Failed to connect to Reddit. Please check your API credentials in config.ini. Details: {e}", file=sys.stderr)
+        return []
+
+    found_subreddits = []
+    try:
+        print(f"--- Searching for subreddits matching '{topic}'... ---")
+        # Search for subreddits, fetch more to filter
+        for subreddit in reddit.subreddits.search(topic, limit=limit*2): 
+            # Basic filter to ensure relevance
+            if topic.lower() in subreddit.display_name.lower() or topic.lower() in str(subreddit.public_description).lower():
+                 found_subreddits.append({
+                     'name': subreddit.display_name_prefixed,
+                     'subscribers': subreddit.subscribers
+                 })
+
+        if not found_subreddits:
+            print("--- No relevant subreddits found. ---")
+            return []
+        
+        # Sort by subscribers and take the top 'limit'
+        sorted_subreddits = sorted(found_subreddits, key=lambda x: x['subscribers'], reverse=True)[:limit]
+        
+        print(f"--- Found and filtered {len(sorted_subreddits)} relevant subreddits. ---")
+        return sorted_subreddits
+
+    except Exception as e:
+        print(f"ERROR: An error occurred while searching for subreddits. Details: {e}", file=sys.stderr)
+        return []
 
 def run_community_discovery(config, topic):
     """Main function to run the community discovery analysis."""
