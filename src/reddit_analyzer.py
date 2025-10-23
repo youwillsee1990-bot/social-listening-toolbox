@@ -35,11 +35,10 @@ def get_reddit_posts(config, subreddits, limit, time_filter):
     print(f"--- [Reddit] Fetched a total of {len(all_posts)} posts. ---")
     return all_posts
 
-def perform_deep_dive(config, problem_posts, context, output_file_base):
-    """Performs the deep-dive analysis and returns the concentration score."""
+def perform_deep_dive(config, problem_posts, context):
+    """Performs deep-dive analysis and returns the score and full report text."""
     print("\n--- [Reddit] Starting deep-dive pain point concentration analysis... ---")
-    concentration_score = "N/A"
-
+    
     post_snippets = []
     for post in problem_posts:
         snippet = f"Title: {post.title}\nBody Snippet: {post.selftext[:400]}"
@@ -47,7 +46,7 @@ def perform_deep_dive(config, problem_posts, context, output_file_base):
 
     if not post_snippets:
         print("--- No problem posts to analyze for deep-dive. ---")
-        return concentration_score
+        return "N/A", None
 
     role = f"You are an expert market analyst specializing in the '{context}' domain."
     
@@ -71,31 +70,24 @@ Finally, on a new line at the very end of your entire response, add the score in
     gemini_api_key = config['GEMINI']['API_KEY']
     analysis_result = utils.get_gemini_analysis(gemini_api_key, prompt)
 
-    if analysis_result:
-        output_filename = output_file_base + "_deep_dive.md"
-        try:
-            with open(output_filename, 'w', encoding='utf-8') as f:
-                f.write(analysis_result)
-            print(f"--- [Reddit] Deep-dive analysis report saved to {output_filename} ---")
-
-            # Extract the score from the result
-            match = re.search(r"Pain-Point-Concentration-Score:\s*(\d+/10)", analysis_result)
-            if match:
-                concentration_score = match.group(1)
-
-        except IOError as e:
-            print(f"ERROR: Could not write deep-dive report to file. Error: {e}", file=sys.stderr)
-    else:
+    if not analysis_result:
         print("--- [Reddit] Deep-dive analysis failed to produce a result. ---")
+        return "N/A", None
+
+    # Extract the score from the result
+    concentration_score = "N/A"
+    match = re.search(r"Pain-Point-Concentration-Score:\s*(\d+/10)", analysis_result)
+    if match:
+        concentration_score = match.group(1)
     
-    return concentration_score
+    return concentration_score, analysis_result
 
 def run_reddit_analysis(config, subreddits, limit, time_filter, output_file_base, deep_dive=False, context=None, snippet_length=500):
     """Main function to run the Reddit analysis using batch processing."""
     posts = get_reddit_posts(config, subreddits, limit, time_filter)
 
     if not posts:
-        print("--- No posts found. Exiting Reddit analysis.---")
+        print("--- No posts found. Exiting Reddit analysis. ---")
         return
 
     print(f"--- Starting batch analysis of {len(posts)} posts with Gemini... ---")
@@ -112,7 +104,7 @@ def run_reddit_analysis(config, subreddits, limit, time_filter, output_file_base
     problem_post_ids = utils.analyze_posts_batch(gemini_api_key, posts_for_batch)
 
     if problem_post_ids is None:
-        print("--- AI analysis failed. No report will be generated.---")
+        print("--- AI analysis failed. No report will be generated. ---")
         return
 
     problem_posts_count = len(problem_post_ids)
@@ -122,14 +114,14 @@ def run_reddit_analysis(config, subreddits, limit, time_filter, output_file_base
     
     problem_posts = [posts[i] for i in problem_post_ids]
 
-    output_file = output_file_base + ".csv"
-    print(f"--- Found {problem_posts_count} problem posts. Creating output file: {output_file} ---")
+    # --- Save Problem Density Report (.csv) ---
+    output_csv_file = output_file_base + ".csv"
+    print(f"--- Found {problem_posts_count} problem posts. Creating output file: {output_csv_file} ---")
     
-    with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
+    with open(output_csv_file, 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['subreddit', 'title', 'url', 'score']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-
         for post in problem_posts:
             writer.writerow({
                 'subreddit': post.subreddit.display_name,
@@ -137,23 +129,41 @@ def run_reddit_analysis(config, subreddits, limit, time_filter, output_file_base
                 'url': post.url,
                 'score': post.score
             })
-
-    print(f"List of problem posts saved to {output_file}")
+    print(f"List of problem posts saved to {output_csv_file}")
 
     if total_posts > 0:
         problem_density = (problem_posts_count / total_posts) * 100
 
+    # --- Perform Deep Dive Analysis (if requested) ---
     if deep_dive:
         if not context:
             print("\nWARNING: --deep-dive was specified, but no --context was provided. Deep-dive will be less effective.", file=sys.stderr)
             context = "general products or services"
         
         if problem_posts:
-            concentration_score = perform_deep_dive(config, problem_posts, context, output_file_base)
+            concentration_score, deep_dive_report_text = perform_deep_dive(config, problem_posts, context)
+            
+            if deep_dive_report_text:
+                # --- Save Deep Dive Report (.md) ---
+                summary_header = f"# Deep Dive Analysis for: {context}\n\n"
+                summary_header += f"## 📊 Summary Metrics\n"
+                summary_header += f"- **Problem Density:** {problem_density:.2f}%\n"
+                summary_header += f"- **Pain Point Concentration Score:** {concentration_score}\n\n---\n\n"
+                
+                full_report = summary_header + deep_dive_report_text
+                output_md_file = output_file_base + "_deep_dive.md"
+                
+                print(f"--- [Reddit] Saving deep-dive analysis report to {output_md_file} ---")
+                try:
+                    with open(output_md_file, 'w', encoding='utf-8') as f:
+                        f.write(full_report)
+                    print("--- [Reddit] Report saved successfully. ---")
+                except IOError as e:
+                    print(f"ERROR: Could not write deep-dive report to file. Error: {e}", file=sys.stderr)
         else:
             print("\n--- No problem posts found, skipping deep-dive analysis. ---")
 
-    # --- Final Summary ---
+    # --- Print Final Summary to Console ---
     print("\n---")
     print("📊 Final Summary")
     print("---")
