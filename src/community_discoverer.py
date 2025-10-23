@@ -8,6 +8,7 @@ relevant subreddits for a given topic.
 
 import sys
 import praw
+import json
 
 def find_subreddits(config, topic, limit=10):
     """
@@ -35,7 +36,8 @@ def find_subreddits(config, topic, limit=10):
             if topic.lower() in subreddit.display_name.lower() or topic.lower() in str(subreddit.public_description).lower():
                  found_subreddits.append({
                      'name': subreddit.display_name_prefixed,
-                     'subscribers': subreddit.subscribers
+                     'subscribers': subreddit.subscribers,
+                     'url': f"https://www.reddit.com{subreddit.url}"
                  })
 
         if not found_subreddits:
@@ -52,15 +54,31 @@ def find_subreddits(config, topic, limit=10):
         print(f"ERROR: An error occurred while searching for subreddits. Details: {e}", file=sys.stderr)
         return []
 
-def run_community_discovery(config, topic):
+def run_community_discovery(config, topic, output_file_base=None):
     """Main function to run the community discovery analysis."""
     print(f"--- Initializing Community Discovery Module for topic: '{topic}' ---")
     
-    found_subreddits = find_subreddits(config, topic)
+    subreddits = find_subreddits(config, topic)
     
+    if not subreddits:
+        print("--- Community Discovery Module Finished: No communities found. ---")
+        return
+
+    # Print to console
     print("\n[+] Recommended subreddits to analyze:")
     # Sort by subscribers, descending
-    for sub in sorted(found_subreddits, key=lambda x: x['subscribers'], reverse=True):
+    for sub in subreddits:
         print(f"- {sub['name']} (Subscribers: {sub['subscribers']:,})")
-        
+    
+    # Save to file
+    if output_file_base:
+        output_filename = output_file_base + ".json"
+        print(f"\n--- Saving results to {output_filename} ---")
+        try:
+            with open(output_filename, 'w', encoding='utf-8') as f:
+                json.dump(subreddits, f, indent=4, ensure_ascii=False)
+            print("--- Results saved successfully. ---")
+        except IOError as e:
+            print(f"ERROR: Could not write results to file. Error: {e}", file=sys.stderr)
+
     print("\n--- Community Discovery Module Finished ---")

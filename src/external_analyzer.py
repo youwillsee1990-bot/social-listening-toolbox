@@ -2,16 +2,15 @@
 # -*- coding: utf-8 -*-
 
 """
-This module implements the 'discover' feature, which analyzes a YouTube topic
+This module implements the 'external-analysis' feature, which analyzes a YouTube topic
 for niche opportunities by evaluating content freshness and channel authority.
 """
 
 import sys
+import os
 from datetime import datetime, timezone
-
-# Assuming utils.py and other modules are in the same src directory
 import utils
-from youtube_analyzer import get_youtube_service # Re-use the service initializer
+from youtube_analyzer import get_youtube_service
 
 def search_videos_by_keyword(youtube_service, topic, max_results=25):
     """Searches for videos on YouTube based on a keyword and returns the top results."""
@@ -21,7 +20,7 @@ def search_videos_by_keyword(youtube_service, topic, max_results=25):
             part="snippet",
             q=topic,
             type="video",
-            order="relevance", # Order by relevance to simulate a real user search
+            order="relevance",
             maxResults=max_results
         )
         response = request.execute()
@@ -32,116 +31,85 @@ def search_videos_by_keyword(youtube_service, topic, max_results=25):
         return []
 
 def analyze_content_freshness(videos, gemini_api_key):
-    """Analyzes the age of a list of videos to determine content freshness."""
-    print("\n--- Analyzing Content Freshness ---")
+    """Analyzes video age distribution and returns a markdown summary."""
+    print("--- Analyzing Content Freshness ---")
     if not videos:
-        print("[-] No videos to analyze.")
-        return
+        return "### Content Freshness Analysis\n\n- No videos to analyze.\n"
 
     now = datetime.now(timezone.utc)
-    age_distribution = {
-        "Under 1 month": 0,
-        "1-6 months": 0,
-        "6-12 months": 0,
-        "Over 1 year": 0
-    }
+    age_distribution = {"Under 1 month": 0, "1-6 months": 0, "6-12 months": 0, "Over 1 year": 0}
     
     for video in videos:
         published_at = datetime.fromisoformat(video['snippet']['publishedAt'])
         age_days = (now - published_at).days
+        if age_days <= 30: age_distribution["Under 1 month"] += 1
+        elif 31 <= age_days <= 180: age_distribution["1-6 months"] += 1
+        elif 181 <= age_days <= 365: age_distribution["6-12 months"] += 1
+        else: age_distribution["Over 1 year"] += 1
 
-        if age_days <= 30:
-            age_distribution["Under 1 month"] += 1
-        elif 31 <= age_days <= 180:
-            age_distribution["1-6 months"] += 1
-        elif 181 <= age_days <= 365:
-            age_distribution["6-12 months"] += 1
-        else:
-            age_distribution["Over 1 year"] += 1
-
-    print("[+] Video Age Distribution:")
+    report = ["### Content Freshness Analysis\n\n**Video Age Distribution:**"]
     for category, count in age_distribution.items():
-        print(f"    - {category}: {count} videos")
+        report.append(f"- {category}: {count} videos")
 
     distribution_str = "\n".join([f"{cat}: {count}" for cat, count in age_distribution.items()])
     prompt = f'''As a YouTube niche analyst, evaluate the following distribution of video ages for a search keyword. 
     Based on this data, determine the "Content Freshness" of this niche. 
-    A niche with many old videos (over a year) suggests the algorithm is looking for fresh content and represents a good opportunity. 
+    A niche with many old videos (over a year) suggests a good opportunity. 
     A niche dominated by very recent videos is highly competitive.
 
     Data:
     Total videos analyzed: {len(videos)}
     {distribution_str}
 
-    Provide a concise conclusion in Chinese, starting with a "Freshness Score" (e.g., 鲜血指数) from 1-10 (10 being a huge opportunity for new content) and a brief justification.
+    Provide a concise conclusion in Chinese, starting with a "Freshness Score" (e.g., 鲜血指数) from 1-10 (10 being a huge opportunity) and a brief justification.
     '''
     
     analysis = utils.get_gemini_analysis(gemini_api_key, prompt)
     if analysis:
-        print("\n[+] Freshness Analysis Summary:")
-        print(analysis)
+        report.append("\n**Summary:**")
+        report.append(analysis)
     else:
-        print("\n[-] Could not get Freshness Analysis from AI.")
+        report.append("\n**Summary:**\n- AI analysis for content freshness failed.")
+    
+    return "\n".join(report)
 
 def analyze_channel_authority(youtube_service, videos, gemini_api_key):
-    """Analyzes the subscriber counts of channels in a list of videos."""
-    print("\n--- Analyzing Channel Authority ---")
+    """Analyzes channel subscriber counts and returns a markdown summary."""
+    print("--- Analyzing Channel Authority ---")
     if not videos:
-        print("[-] No videos to analyze.")
-        return
+        return "### Channel Authority Analysis\n\n- No videos to analyze.\n"
 
     channel_ids = list(set([video['snippet']['channelId'] for video in videos]))
+    report = ["### Channel Authority Analysis"]
     
     try:
-        print("[+] Fetching subscriber counts for all channels...")
-        channel_request = youtube_service.channels().list(
-            part="statistics,snippet", # Also get snippet for channel title
-            id=",".join(channel_ids)
-        )
+        channel_request = youtube_service.channels().list(part="statistics,snippet", id=",".join(channel_ids))
         channel_response = channel_request.execute()
         
-        authority_distribution = {
-            "< 10k subs": 0,
-            "10k - 100k subs": 0,
-            "100k - 1M subs": 0,
-            "> 1M subs": 0
-        }
+        authority_dist = {"< 10k subs": 0, "10k - 100k subs": 0, "100k - 1M subs": 0, "> 1M subs": 0}
+        channel_details_map = {item['id']: {'subs': int(item['statistics'].get('subscriberCount', 0)), 'title': item['snippet'].get('title', '[Unknown]')} for item in channel_response.get('items', [])}
 
-        channel_details_map = {item['id']: {
-            'subs': int(item['statistics'].get('subscriberCount', 0)),
-            'title': item['snippet'].get('title', '[Unknown Channel]')
-        } for item in channel_response.get('items', [])}
-
-        print("\n--- Raw Data for Transparency Test ---")
-        print("List of top ranking videos and their channel's subscriber count:")
+        report.append("\n**Ranking Channel Details:**")
         for video in videos:
-            channel_id = video['snippet']['channelId']
-            channel_info = channel_details_map.get(channel_id, {'subs': 0, 'title': '[Unknown]'})
-            subs_count = channel_info['subs']
-            channel_title = channel_info['title']
-            video_title = video['snippet']['title']
-            print(f'- [Subs: {subs_count:,}] {channel_title} - "{video_title}"')
-        print("-------------------------------------\n")
+            ch_id = video['snippet']['channelId']
+            info = channel_details_map.get(ch_id, {'subs': 0, 'title': '[Unknown]'}) # Use ch_id here
+            report.append(f'- [Subs: {info['subs']:,}] {info['title']} - "{video['snippet']['title']}"')
 
         for video in videos:
             subs = channel_details_map.get(video['snippet']['channelId'], {'subs': 0})['subs']
-            if subs < 10000:
-                authority_distribution["< 10k subs"] += 1
-            elif 10000 <= subs < 100000:
-                authority_distribution["10k - 100k subs"] += 1
-            elif 100000 <= subs < 1000000:
-                authority_distribution["100k - 1M subs"] += 1
-            else:
-                authority_distribution["> 1M subs"] += 1
+            if subs < 10000: authority_dist["< 10k subs"] += 1
+            elif 10000 <= subs < 100000: authority_dist["10k - 100k subs"] += 1
+            elif 100000 <= subs < 1000000: authority_dist["100k - 1M subs"] += 1
+            else: authority_dist["> 1M subs"] += 1
 
-        print("[+] Channel Authority Distribution (by video count):")
-        for category, count in authority_distribution.items():
-            print(f"    - {category}: {count} videos")
+        report.append("\n**Video Distribution by Channel Size:**")
+        for category, count in authority_dist.items():
+            report.append(f"- {category}: {count} videos")
 
-        distribution_str = "\n".join([f"{cat}: {count}" for cat, count in authority_distribution.items()])
+        distribution_str = "\n".join([f"{cat}: {count}" for cat, count in authority_dist.items()])
         prompt = f'''As a YouTube niche analyst, evaluate the following distribution of channel sizes for videos ranking for a keyword.
-        Based on this data, determine the "Channel Authority" dominance and how "newbie-friendly" the niche is.
-        A niche where small channels (<100k subs) can rank is friendly. A niche dominated by huge channels (>1M subs) is very difficult for new creators.
+        Based on this data, determine how "newbie-friendly" the niche is.
+        A niche where small channels (<100k subs) can rank is friendly. A niche dominated by huge channels (>1M subs) is very difficult.
 
         Data:
         Total videos analyzed: {len(videos)}
@@ -151,21 +119,23 @@ def analyze_channel_authority(youtube_service, videos, gemini_api_key):
         '''
         analysis = utils.get_gemini_analysis(gemini_api_key, prompt)
         if analysis:
-            print("\n[+] Authority Analysis Summary:")
-            print(analysis)
+            report.append("\n**Summary:**")
+            report.append(analysis)
         else:
-            print("\n[-] Could not get Authority Analysis from AI.")
+            report.append("\n**Summary:**\n- AI analysis for channel authority failed.")
 
     except Exception as e:
-        print(f"ERROR: Failed to analyze channel authority. Error: {e}", file=sys.stderr)
+        report.append(f"\nERROR: Failed to analyze channel authority. Error: {e}")
+    
+    return "\n".join(report)
 
-def run_external_analysis(config, topic):
-    """Main function to run the niche discovery analysis."""
-    print(f"--- Initializing Niche Discovery Module for topic: '{topic}' ---")
+def run_external_analysis(config, topic, output_file_base=None):
+    """Main function to run the external environment analysis."""
+    print(f"--- Initializing External Environment Analysis for topic: '{topic}' ---")
 
     youtube_service = get_youtube_service(config)
     if not youtube_service:
-        print("--- Niche Discovery aborted due to connection failure. ---")
+        print("--- Analysis aborted due to connection failure. ---")
         return
 
     search_results = search_videos_by_keyword(youtube_service, topic)
@@ -175,7 +145,23 @@ def run_external_analysis(config, topic):
 
     gemini_api_key = config['GEMINI']['API_KEY']
 
-    analyze_content_freshness(search_results, gemini_api_key)
-    analyze_channel_authority(youtube_service, search_results, gemini_api_key)
+    freshness_report = analyze_content_freshness(search_results, gemini_api_key)
+    authority_report = analyze_channel_authority(youtube_service, search_results, gemini_api_key)
 
-    print("\n--- Niche Discovery Module Finished ---")
+    # Combine reports
+    full_report = f"# External Environment Analysis for: {topic}\n\n"
+    full_report += f"{freshness_report}\n\n"
+    full_report += f"{authority_report}\n"
+
+    # Save the combined report to a file
+    if output_file_base:
+        output_filename = output_file_base + ".md"
+        print(f"\n--- Saving full report to {output_filename} ---")
+        try:
+            with open(output_filename, 'w', encoding='utf-8') as f:
+                f.write(full_report)
+            print("--- Report saved successfully. ---")
+        except IOError as e:
+            print(f"ERROR: Could not write report to file. Error: {e}", file=sys.stderr)
+
+    print("\n--- External Environment Analysis Finished ---")
