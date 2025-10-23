@@ -9,7 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 import reddit_analyzer
 import youtube_analyzer
-import discover_analyzer
+import external_analyzer
 
 CONFIG_FILE = 'config.ini'
 
@@ -25,185 +25,69 @@ def load_config():
         print(f"ERROR: Configuration file '{CONFIG_FILE}' not found.")
         sys.exit(1)
     config.read(config_path)
+
+    # Ensure the output directory exists
+    output_dir = config.get('GENERAL', 'output_dir', fallback='output')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     return config
 
-def handle_reddit_deep_dive_command(args, config):
-    print("--- Reddit Deep Dive Analysis is not yet implemented. ---")
-    # Placeholder for reading CSV and calling new analyzer
-    pass
+def get_output_filename_base(config, args, command_name, default_base_prefix):
+    output_dir = config.get('GENERAL', 'output_dir', fallback='output')
+
+    if args.output_file:
+        return os.path.join(output_dir, args.output_file)
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    if hasattr(args, 'subreddits') and args.subreddits:
+        base_name = sanitize_filename(args.subreddits[0])
+        return os.path.join(output_dir, f"{base_name}_{command_name}_{timestamp}")
+    
+    return os.path.join(output_dir, f"{default_base_prefix}_{timestamp}")
 
 def handle_reddit_command(args, config):
-
-    if args.output_file:
-        output_filename_base = os.path.join("output", args.output_file)
-    else:
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        base_name = sanitize_filename(args.subreddits[0])
-        output_filename_base = os.path.join("output", f"{base_name}_reddit_{timestamp}")
-
-    
+    output_filename_base = get_output_filename_base(config, args, 'reddit', 'reddit_analysis')
 
     reddit_analyzer.run_reddit_analysis(
-
         config=config,
-
         subreddits=args.subreddits,
-
         limit=args.limit,
-
         time_filter=args.time_filter,
-
-        output_file_base=output_filename_base
-
+        output_file_base=output_filename_base,
+        deep_dive=args.deep_dive,
+        context=args.context
     )
-
-
 
 def handle_macro_analysis_command(args, config):
-
-
-
-    if args.output_file:
-
-
-
-        output_filename_base = os.path.join("output", args.output_file)
-
-
-
-    else:
-
-
-
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-
-
-
-        # Simplified filename for now
-
-
-
-        output_filename_base = os.path.join("output", f"macro_analysis_{timestamp}")
-
-
-
-
-
-
+    output_filename_base = get_output_filename_base(config, args, 'macro_analysis', 'macro_analysis')
 
     youtube_analyzer.run_macro_analysis(
-
-
-
         config=config,
-
-
-
         channel_url=args.channel_url,
-
-
-
         channel_id=args.channel_id,
-
-
-
         video_limit=args.video_limit,
-
-
-
         sort_by=args.sort_by,
-
-
-
         analyze_trends=args.analyze_trends,
-
-
-
         output_file_base=output_filename_base
-
-
-
     )
-
-
-
-
-
-
 
 def handle_micro_analysis_command(args, config):
-
-
-
-    if args.output_file:
-
-
-
-        output_filename_base = os.path.join("output", args.output_file)
-
-
-
-    else:
-
-
-
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-
-
-
-        # Simplified filename for now
-
-
-
-        output_filename_base = os.path.join("output", f"micro_analysis_{timestamp}")
-
-
-
-
-
-
+    output_filename_base = get_output_filename_base(config, args, 'micro_analysis', 'micro_analysis')
 
     youtube_analyzer.run_micro_analysis(
-
-
-
         config=config,
-
-
-
         channel_url=args.channel_url,
-
-
-
         channel_id=args.channel_id,
-
-
-
         video_limit=args.video_limit,
-
-
-
         sort_by=args.sort_by,
-
-
-
         comment_limit=args.comment_limit,
-
-
-
         output_file_base=output_filename_base
-
-
-
     )
 
-
 def handle_meso_analysis_command(args, config):
-    if args.output_file:
-        output_filename_base = os.path.join("output", args.output_file)
-    else:
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_filename_base = os.path.join("output", f"meso_analysis_{timestamp}")
+    output_filename_base = get_output_filename_base(config, args, 'meso_analysis', 'meso_analysis')
 
     youtube_analyzer.run_meso_analysis(
         config=config,
@@ -215,54 +99,27 @@ def handle_meso_analysis_command(args, config):
     )
 
 def handle_external_analysis_command(args, config):
-
-    discover_analyzer.run_discover_analysis(
-
+    external_analyzer.run_external_analysis(
         config=config,
-
         topic=args.topic
-
     )
 
-
-
 def main():
-
     print("--- Social Listening Toolbox --- \n")
-
     config = load_config()
-
     
-
     main_parser = argparse.ArgumentParser(description='A multi-platform tool to analyze community discussions.')
-
     subparsers = main_parser.add_subparsers(dest='command', required=True, help='Available commands')
 
-
-
     # --- Reddit Parser ---
-
-    parser_reddit = subparsers.add_parser('reddit', help='Analyze Reddit for problem density.')
-
+    parser_reddit = subparsers.add_parser('reddit', help='Analyze Reddit for problem density and optionally perform a deep-dive pain point analysis.')
     parser_reddit.add_argument('subreddits', nargs='+', help='List of subreddits to analyze.')
-
     parser_reddit.add_argument('--limit', type=int, default=50, help='Number of posts to fetch.')
-
     parser_reddit.add_argument('--time_filter', type=str, default='month', choices=['all', 'day', 'hour', 'month', 'week', 'year'], help='Time filter for posts.')
-
     parser_reddit.add_argument('--output_file', type=str, default=None, help='Base name for the output file (e.g., my_analysis). Extension is added automatically.')
-
+    parser_reddit.add_argument('--deep-dive', action='store_true', help='If specified, performs a deep-dive pain point concentration analysis on the problem posts.')
+    parser_reddit.add_argument('--context', type=str, default=None, help='The topic or context for the deep-dive analysis (e.g., "SaaS pricing"). Required if --deep-dive is used.')
     parser_reddit.set_defaults(func=handle_reddit_command)
-
-
-
-    # --- Reddit Deep Dive Parser ---
-    parser_reddit_deep_dive = subparsers.add_parser('reddit-deep-dive', help='Perform deep analysis on a CSV of problem posts.')
-    parser_reddit_deep_dive.add_argument('input_file', type=str, help='Path to the CSV file generated by the \'reddit\' command.')
-    parser_reddit_deep_dive.add_argument('--context', type=str, required=True, help='The topic or context of the subreddit (e.g., "gardening", "software development").')
-    parser_reddit_deep_dive.set_defaults(func=handle_reddit_deep_dive_command)
-
-
 
     # --- Macro Analysis Parser (YouTube) ---
     parser_macro = subparsers.add_parser('macro-analysis', help='Analyze a YouTube channel (Macro level: titles, trends). Low cost.')
