@@ -159,7 +159,7 @@ def analyze_channel_authority(youtube_service, videos, gemini_api_key):
     except Exception as e:
         print(f"ERROR: Failed to analyze channel authority. Error: {e}", file=sys.stderr)
 
-def run_discover_analysis(config, topic):
+def run_external_analysis(config, topic):
     """Main function to run the niche discovery analysis."""
     print(f"--- Initializing Niche Discovery Module for topic: '{topic}' ---")
 
