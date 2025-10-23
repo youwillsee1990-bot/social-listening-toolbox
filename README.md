@@ -7,7 +7,7 @@ A command-line tool to analyze discussions and sentiment on social media platfor
 ## Project Status
 
 *   **Reddit Analyzer**: :white_check_mark: **Functional**. Can discover communities, analyze problem density, and perform deep-dive analysis on pain points.
-*   **YouTube Analyzer**: :white_check_mark: **Functional**. A full suite of tools for external, macro, meso, and micro analysis.
+*   **YouTube Analyzer**: :white_check_mark: **Functional**. A full suite of tools for keyword research, external, macro, meso, and micro analysis.
 
 ---
 
@@ -80,9 +80,27 @@ python3 analyzer.py reddit [SUBREDDIT_NAMES...] [OPTIONS]
 
 ---
 
-### 3. External Environment Analysis (YouTube)
+### 3. Keyword Opportunity Matrix (YouTube)
 
-**Goal:** Analyze the competitive environment for a YouTube topic to find “blue ocean” niches.
+**Goal:** Batch analyze and compare multiple YouTube keywords to find golden opportunities.
+
+This command calculates a "Demand Score" (based on average views) and a "Competition Score" (based on channel authority) for each keyword, then presents them in a comparative matrix.
+
+**Command:**
+```bash
+python3 analyzer.py keyword-matrix [KEYWORDS...]
+```
+
+**Example:**
+```bash
+python3 analyzer.py keyword-matrix "AI agent tutorial" "SaaS boilerplate" "Next.js starter kit"
+```
+
+---
+
+### 4. External Environment Analysis (YouTube)
+
+**Goal:** Deep-dive into a single promising keyword from Step 3 to analyze its competitive environment.
 
 **Command:**
 ```bash
@@ -96,7 +114,7 @@ python3 analyzer.py external-analysis "AI Agent Automation Tutorial"
 
 ---
 
-### 4. Macro-level Channel Analysis (YouTube)
+### 5. Macro-level Channel Analysis (YouTube)
 
 **Goal:** Analyze a channel’s video titles to understand its content strategy (low-cost).
 
@@ -107,7 +125,7 @@ python3 analyzer.py macro-analysis --channel_id <UC_CHANNEL_ID> [OPTIONS]
 
 ---
 
-### 5. Meso-level Visual Analysis (YouTube)
+### 6. Meso-level Visual Analysis (YouTube)
 
 **Goal:** Analyze a channel’s thumbnail images to understand its visual strategy.
 
@@ -118,7 +136,7 @@ python3 analyzer.py meso-analysis --channel_id <UC_CHANNEL_ID> [OPTIONS]
 
 ---
 
-### 6. Micro-level Comment Analysis (YouTube)
+### 7. Micro-level Comment Analysis (YouTube)
 
 **Goal:** Analyze a channel’s comment section for audience feedback and sentiment (high-cost).
 
