@@ -10,6 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 import reddit_analyzer
 import youtube_analyzer
 import external_analyzer
+import community_discoverer
 
 CONFIG_FILE = 'config.ini'
 
@@ -98,6 +99,9 @@ def handle_meso_analysis_command(args, config):
         output_file_base=output_filename_base
     )
 
+def handle_discover_communities_command(args, config):
+    community_discoverer.run_community_discovery(config, args.topic)
+
 def handle_external_analysis_command(args, config):
     external_analyzer.run_external_analysis(
         config=config,
@@ -152,6 +156,11 @@ def main():
     parser_meso.add_argument('--sort_by', type=str, default='popular', choices=['popular', 'newest'], help='Method for selecting videos.')
     parser_meso.add_argument('--output_file', type=str, default=None, help='Base name for the output file.')
     parser_meso.set_defaults(func=handle_meso_analysis_command)
+
+    # --- Community Discovery Parser ---
+    parser_discover = subparsers.add_parser('discover-communities', help='Discover relevant Reddit communities for a given topic.')
+    parser_discover.add_argument('topic', type=str, help='The topic or keyword to search for.')
+    parser_discover.set_defaults(func=handle_discover_communities_command)
 
     # --- External Analysis Parser ---
     parser_external = subparsers.add_parser('external-analysis', help='Analyze a YouTube topic for niche opportunities.')
