@@ -11,6 +11,7 @@ import reddit_analyzer
 import youtube_analyzer
 import external_analyzer
 import community_discoverer
+import keyword_matrix_analyzer
 
 CONFIG_FILE = 'config.ini'
 
@@ -24,22 +25,21 @@ def get_output_path_base(config, args, command_name, platform):
     """Generates a structured, descriptive base path for output files."""
     base_output_dir = config.get('GENERAL', 'output_dir', fallback='output')
     
-    # Create platform and date subdirectories
     date_str = datetime.now().strftime('%Y-%m-%d')
     time_str = datetime.now().strftime('%H%M%S')
     structured_dir = os.path.join(base_output_dir, platform, date_str)
     os.makedirs(structured_dir, exist_ok=True)
 
-    # Create a descriptive subject for the filename
     subject = ''
-    if hasattr(args, 'subreddits') and args.subreddits:
+    if hasattr(args, 'keywords') and args.keywords:
+        subject = sanitize_filename('+'.join(args.keywords))
+    elif hasattr(args, 'subreddits') and args.subreddits:
         subject = sanitize_filename('+'.join(args.subreddits))
     elif hasattr(args, 'topic') and args.topic:
         subject = sanitize_filename(args.topic)
     elif hasattr(args, 'channel_id') and args.channel_id:
         subject = sanitize_filename(args.channel_id)
     elif hasattr(args, 'channel_url') and args.channel_url:
-        # Extract a more meaningful name from the URL if possible
         match = re.search(r'@([\w-]+)', args.channel_url)
         if match:
             subject = sanitize_filename(match.group(1))
@@ -47,7 +47,6 @@ def get_output_path_base(config, args, command_name, platform):
             subject = 'channel'
 
     if args.output_file:
-        # If a custom name is provided, still place it in the structured directory
         return os.path.join(structured_dir, args.output_file)
 
     filename_base = f"{command_name}_{subject}_{time_str}"
@@ -64,6 +63,10 @@ def handle_reddit_command(args, config):
         deep_dive=args.deep_dive,
         context=args.context
     )
+
+def handle_keyword_matrix_command(args, config):
+    output_path_base = get_output_path_base(config, args, 'keyword-matrix', 'YouTube')
+    keyword_matrix_analyzer.run_keyword_matrix_analysis(config, args.keywords, output_path_base)
 
 def handle_macro_analysis_command(args, config):
     output_path_base = get_output_path_base(config, args, 'macro', 'YouTube')
@@ -117,7 +120,6 @@ def main():
         sys.exit(1)
     config.read(config_path)
 
-    # General output directory from config
     output_dir = config.get('GENERAL', 'output_dir', fallback='output')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -141,6 +143,11 @@ def main():
     parser_reddit.set_defaults(func=handle_reddit_command)
 
     # --- YouTube Parsers ---
+    parser_keyword_matrix = subparsers.add_parser('keyword-matrix', help='Analyze and compare multiple YouTube keywords to find opportunities.')
+    parser_keyword_matrix.add_argument('keywords', nargs='+', help='A list of keywords to analyze and compare.')
+    parser_keyword_matrix.add_argument('--output_file', type=str, default=None, help='Custom base name for the output file.')
+    parser_keyword_matrix.set_defaults(func=handle_keyword_matrix_command)
+
     parser_external = subparsers.add_parser('external-analysis', help='Analyze a YouTube topic for niche opportunities.')
     parser_external.add_argument('topic', type=str, help='The topic or keyword to search for.')
     parser_external.add_argument('--output_file', type=str, default=None, help='Custom base name for the output file.')
