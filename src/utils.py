@@ -28,9 +28,7 @@ def get_gemini_analysis(gemini_api_key, prompt, is_json_output=False):
 
     response = None
     try:
-        print("DEBUG: Before Gemini API call.", file=sys.stderr)
         response = model.generate_content(prompt)
-        print("DEBUG: After Gemini API call.", file=sys.stderr)
         
         if is_json_output:
             # Clean up potential markdown JSON formatting
