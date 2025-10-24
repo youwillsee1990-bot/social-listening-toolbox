@@ -93,7 +93,7 @@ def analyze_channel_authority(youtube_service, videos, gemini_api_key):
         for video in videos:
             ch_id = video['snippet']['channelId']
             info = channel_details_map.get(ch_id, {'subs': 0, 'title': '[Unknown]'}) # Use ch_id here
-            report.append(f'- [Subs: {info['subs']:,}] {info['title']} - "{video['snippet']['title']}"')
+            report.append(f"- [Subs: {info['subs']:,}] {info['title']} - \"{video['snippet']['title']}\"")
 
         for video in videos:
             subs = channel_details_map.get(video['snippet']['channelId'], {'subs': 0})['subs']
