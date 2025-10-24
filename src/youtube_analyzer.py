@@ -104,7 +104,8 @@ def summarize_frequent_questions(gemini_api_key, questions):
     print("\n--- Summarizing Frequent Questions ---")
     if not questions:
         return
-    prompt = f'''As a community manager, analyze the following list of questions...\n\nQuestions List:\n{"\n".join([f"- {q}" for q in questions])}\n\nTop Frequent Questions Summary:'''
+    newline = "\n"
+    prompt = f'''As a community manager, analyze the following list of questions...{newline}{newline}Questions List:{newline}{newline.join([f"- {q}" for q in questions])}{newline}{newline}Top Frequent Questions Summary:'''
     analysis = utils.get_gemini_analysis(gemini_api_key, prompt)
     if analysis:
         print("\n[+] Frequent Questions Summary:")
