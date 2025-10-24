@@ -64,7 +64,8 @@ def get_channel_videos(youtube_service, channel_id, sort_by, video_limit, force_
 
 def analyze_content_strategy(gemini_api_key, video_titles):
     print("\n--- Analyzing Content Strategy (Macro Analysis) ---")
-    prompt = f'''As a YouTube content strategy expert, analyze the following list of video titles from a single channel. Based on these titles, identify and summarize the main content pillars or themes of this channel. Provide the output in Chinese as a concise, bulleted list.\n\nVideo Titles:\n---\n{"\n".join(video_titles)}\n---'''
+    newline = "\n"
+    prompt = f'''As a YouTube content strategy expert, analyze the following list of video titles from a single channel. Based on these titles, identify and summarize the main content pillars or themes of this channel. Provide the output in Chinese as a concise, bulleted list.{newline}{newline}Video Titles:{newline}---{newline}{newline.join(video_titles)}{newline}---'''
     analysis = utils.get_gemini_analysis(gemini_api_key, prompt)
     if analysis:
         print("\n[+] Channel Content Strategy Summary:")
