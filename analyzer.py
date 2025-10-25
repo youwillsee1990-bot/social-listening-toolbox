@@ -5,13 +5,15 @@ import os
 import re
 from datetime import datetime
 
+# Best practice is to structure your project as a package, which avoids sys.path manipulation.
+# For now, this works, but consider refactoring if the project grows.
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-import reddit_analyzer
-import youtube_analyzer
-import external_analyzer
-import community_discoverer
-import keyword_matrix_analyzer
+from src import reddit_analyzer
+from src import youtube_analyzer
+from src import external_analyzer
+from src import community_discoverer
+from src import keyword_matrix_analyzer
 
 CONFIG_FILE = 'config.ini'
 
@@ -25,31 +27,35 @@ def get_output_path_base(config, args, command_name, platform):
     """Generates a structured, descriptive base path for output files."""
     base_output_dir = config.get('GENERAL', 'output_dir', fallback='output')
     
-    date_str = datetime.now().strftime('%Y-%m-%d')
-    time_str = datetime.now().strftime('%H%M%S')
+    # Call datetime.now() once to ensure consistency
+    now = datetime.now()
+    date_str = now.strftime('%Y-%m-%d')
+    time_str = now.strftime('%H%M%S')
+    
     structured_dir = os.path.join(base_output_dir, platform, date_str)
     os.makedirs(structured_dir, exist_ok=True)
 
     subject = ''
-    if hasattr(args, 'keywords') and args.keywords:
-        subject = sanitize_filename('+'.join(args.keywords))
-    elif hasattr(args, 'subreddits') and args.subreddits:
-        subject = sanitize_filename('+'.join(args.subreddits))
-    elif hasattr(args, 'topic') and args.topic:
-        subject = sanitize_filename(args.topic)
-    elif hasattr(args, 'channel_id') and args.channel_id:
-        subject = sanitize_filename(args.channel_id)
-    elif hasattr(args, 'channel_url') and args.channel_url:
-        match = re.search(r'@([\w-]+)', args.channel_url)
-        if match:
-            subject = sanitize_filename(match.group(1))
-        else:
-            subject = 'channel'
+    # A concise and extensible way to find the subject from args
+    subject_source_map = {
+        'keywords': lambda val: '+'.join(val),
+        'subreddits': lambda val: '+'.join(val),
+        'topic': lambda val: val,
+        'channel_id': lambda val: val,
+        'channel_url': lambda val: re.search(r'@([\w-]+)', val).group(1) if re.search(r'@([\w-]+)', val) else 'channel'
+    }
+
+    for attr, extractor in subject_source_map.items():
+        value = getattr(args, attr, None)
+        if value:
+            subject = sanitize_filename(extractor(value))
+            break
 
     if args.output_file:
-        return os.path.join(structured_dir, args.output_file)
+        # If a custom output file is given, use it directly within the structured directory
+        return os.path.join(structured_dir, sanitize_filename(args.output_file))
 
-    filename_base = f"{command_name}_{subject}_{time_str}"
+    filename_base = f"{command_name}_{subject}_{time_str}" if subject else f"{command_name}_{time_str}"
     return os.path.join(structured_dir, filename_base)
 
 def handle_reddit_command(args, config):
@@ -121,11 +127,12 @@ def main():
     config.read(config_path)
 
     output_dir = config.get('GENERAL', 'output_dir', fallback='output')
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
 
     main_parser = argparse.ArgumentParser(description='A multi-platform tool to analyze community discussions.')
-    subparsers = main_parser.add_subparsers(dest='command', required=True, help='Available commands')
+    subparsers = main_parser.add_subparsers(dest='command', help='Available commands')
+    # Make subparsers required on Python < 3.7
+    subparsers.required = True
 
     # --- Reddit Parsers ---
     parser_discover = subparsers.add_parser('discover-communities', help='Discover relevant Reddit communities for a given topic.')
@@ -153,37 +160,36 @@ def main():
     parser_external.add_argument('--output_file', type=str, default=None, help='Custom base name for the output file.')
     parser_external.set_defaults(func=handle_external_analysis_command)
 
-    parser_macro = subparsers.add_parser('macro-analysis', help='Analyze a YouTube channel (Macro level: titles, trends). Low cost.')
-    group_macro = parser_macro.add_mutually_exclusive_group(required=True)
-    group_macro.add_argument('--channel_url', type=str, help='The URL of the YouTube channel.')
-    group_macro.add_argument('--channel_id', type=str, help='The direct ID (UC...) of the channel.')
-    parser_macro.add_argument('--video_limit', type=int, default=10, help='Number of videos to analyze.')
-    parser_macro.add_argument('--sort_by', type=str, default='popular', choices=['popular', 'newest'], help='Method for selecting videos.')
+    # --- Parent parser for YouTube channel analysis to avoid repetition (DRY principle) ---
+    youtube_channel_parser = argparse.ArgumentParser(add_help=False)
+    group_yt = youtube_channel_parser.add_mutually_exclusive_group(required=True)
+    group_yt.add_argument('--channel_url', type=str, help='The URL of the YouTube channel.')
+    group_yt.add_argument('--channel_id', type=str, help='The direct ID (UC...) of the channel.')
+    youtube_channel_parser.add_argument('--video_limit', type=int, default=10, help='Number of videos to analyze.')
+    youtube_channel_parser.add_argument('--sort_by', type=str, default='popular', choices=['popular', 'newest'], help='Method for selecting videos.')
+    youtube_channel_parser.add_argument('--output_file', type=str, default=None, help='Custom base name for the output file.')
+
+    # --- YouTube Channel Analysis Parsers (using the parent parser) ---
+    parser_macro = subparsers.add_parser('macro-analysis', help='Analyze a YouTube channel (Macro level: titles, trends). Low cost.', parents=[youtube_channel_parser])
     parser_macro.add_argument('--analyze_trends', action='store_true', help='Enable content strategy evolution analysis.')
-    parser_macro.add_argument('--output_file', type=str, default=None, help='Custom base name for the output file.')
     parser_macro.set_defaults(func=handle_macro_analysis_command)
 
-    parser_meso = subparsers.add_parser('meso-analysis', help='Analyze a YouTube channel (Meso level: thumbnails).')
-    group_meso = parser_meso.add_mutually_exclusive_group(required=True)
-    group_meso.add_argument('--channel_url', type=str, help='The URL of the YouTube channel.')
-    group_meso.add_argument('--channel_id', type=str, help='The direct ID (UC...) of the channel.')
-    parser_meso.add_argument('--video_limit', type=int, default=10, help='Number of videos to analyze.')
-    parser_meso.add_argument('--sort_by', type=str, default='popular', choices=['popular', 'newest'], help='Method for selecting videos.')
-    parser_meso.add_argument('--output_file', type=str, default=None, help='Custom base name for the output file.')
+    parser_meso = subparsers.add_parser('meso-analysis', help='Analyze a YouTube channel (Meso level: thumbnails).', parents=[youtube_channel_parser])
     parser_meso.set_defaults(func=handle_meso_analysis_command)
 
-    parser_micro = subparsers.add_parser('micro-analysis', help='Analyze a YouTube channel (Micro level: comments). High cost.')
-    group_micro = parser_micro.add_mutually_exclusive_group(required=True)
-    group_micro.add_argument('--channel_url', type=str, help='The URL of the YouTube channel.')
-    group_micro.add_argument('--channel_id', type=str, help='The direct ID (UC...) of the channel.')
-    parser_micro.add_argument('--video_limit', type=int, default=10, help='Number of videos to analyze.')
-    parser_micro.add_argument('--sort_by', type=str, default='popular', choices=['popular', 'newest'], help='Method for selecting videos.')
+    parser_micro = subparsers.add_parser('micro-analysis', help='Analyze a YouTube channel (Micro level: comments). High cost.', parents=[youtube_channel_parser])
     parser_micro.add_argument('--comment_limit', type=int, default=15, help='Number of comments to fetch per video.')
-    parser_micro.add_argument('--output_file', type=str, default=None, help='Custom base name for the output file.')
     parser_micro.set_defaults(func=handle_micro_analysis_command)
 
     args = main_parser.parse_args()
-    args.func(args, config)
+    
+    # This check is good practice to ensure a function is always called
+    if hasattr(args, 'func'):
+        args.func(args, config)
+    else:
+        # If no command is given, print help and exit
+        main_parser.print_help()
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
